@@ -1,0 +1,122 @@
+import { createRouter, createWebHistory } from 'vue-router'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: () => import('../views/homeviews/Home.vue')
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/homeviews/Login.vue')
+  },
+  {
+    path: '/knowledge',
+    name: 'Knowledge',
+    component: () => import('../views/Knowledge.vue')
+  },
+  {
+    path: '/operation',
+    name: 'Operation',
+    component: () => import('../views/Operation.vue')
+  },
+  {
+    path: '/cases',
+    name: 'Cases',
+    component: () => import('../views/Cases.vue')
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../views/Profile.vue')
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('../views/homeviews/ForgotPassword.vue')
+  },
+  {
+    path: '/home',
+    name: 'Dashboard',
+    component: () => import('../views/homeviews/Home.vue')
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('../views/adminViews/AdminLayout.vue'),
+    redirect: '/admin/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('../views/adminViews/AdminDashboard.vue')
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('../views/adminViews/AdminUsers.vue')
+      },
+      {
+        path: 'knowledge',
+        name: 'AdminKnowledge',
+        component: () => import('../views/adminViews/AdminKnowledge.vue')
+      },
+      {
+        path: 'ai-chat',
+        name: 'AdminAIChat',
+        component: () => import('../views/adminViews/AdminAIChat.vue')
+      },
+      {
+        path: 'settings',
+        name: 'AdminSettings',
+        component: () => import('../views/adminViews/AdminSettings.vue')
+      }
+    ]
+  },
+  {
+    path: '/user',
+    name: 'User',
+    component: () => import('../views/userViews/UserLayout.vue'),
+    redirect: '/user/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'UserDashboard',
+        component: () => import('../views/userViews/UserDashboard.vue')
+      },
+      {
+        path: 'search',
+        name: 'UserSearch',
+        component: () => import('../views/userViews/UserSearch.vue')
+      },
+      {
+        path: 'guide',
+        name: 'UserGuide',
+        component: () => import('../views/userViews/UserGuide.vue')
+      },
+      {
+        path: 'cases',
+        name: 'UserCases',
+        component: () => import('../views/userViews/UserCases.vue')
+      },
+      {
+        path: 'ai-chat',
+        name: 'UserAIChat',
+        component: () => import('../views/userViews/UserAIChat.vue')
+      },
+      {
+        path: 'correction',
+        name: 'UserCorrection',
+        component: () => import('../views/userViews/UserCorrection.vue')
+      }
+    ]
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router
