@@ -10,6 +10,7 @@ export async function uploadAudio(file, filename) {
   const response = await fetch('/api/asr/transcribe', {
     method: 'POST',
     body: formData,
+    credentials: 'include',
   })
 
   if (!response.ok) {

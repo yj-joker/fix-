@@ -2,14 +2,9 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock, ArrowRight, Check } from '@element-plus/icons-vue'
+import { login } from '@/api/user'
 
 const router = useRouter()
-
-// 静态用户数据
-const users = [
-  { username: 'admin', password: '123456', type: 1 },
-  { username: 'user', password: '123456', type: 0 },
-]
 
 const formData = reactive({
   username: '',
@@ -33,28 +28,28 @@ const handleSubmit = async () => {
     loading.value = true
     errorMessage.value = ''
 
-    // 查找匹配的用户
-    const user = users.find(
-      (u) => u.username === formData.username && u.password === formData.password
-    )
-
-    setTimeout(() => {
-      if (user) {
+    try {
+      const res = await login(formData.username, formData.password)
+      if (res.code === '200') {
         loginSuccess.value = true
+        // 保存用户信息（后端直接返回UserVO，没有嵌套user对象和token）
+        const userData = res.data
+        localStorage.setItem('userInfo', JSON.stringify(userData))
         loading.value = false
-        // 根据 type 跳转到对应页面
         setTimeout(() => {
-          if (user.type === 1) {
+          if (userData.type === 1) {
             router.push('/admin')
           } else {
             router.push('/user')
           }
         }, 800)
       } else {
-        loading.value = false
-        errorMessage.value = '用户名或密码错误'
+        throw new Error(res.msg || '登录失败')
       }
-    }, 800)
+    } catch (error) {
+      loading.value = false
+      errorMessage.value = error.message || '用户名或密码错误'
+    }
   })
 }
 

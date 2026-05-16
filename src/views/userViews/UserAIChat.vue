@@ -2,6 +2,7 @@
 import { ref, nextTick, onMounted } from 'vue'
 import { ChatDotRound, Upload, Delete, Clock, Folder, Picture, Microphone, Close, Document } from '@element-plus/icons-vue'
 import AIBottomInput from '@/components/AIBottomInput.vue'
+import { chat } from '@/api/ai'
 
 const isTyping = ref(false)
 const showHistory = ref(false)
@@ -68,7 +69,7 @@ function saveCurrentSession() {
 }
 
 // 处理 AIBottomInput 发送的消息
-function handleBottomInputSend(payload) {
+async function handleBottomInputSend(payload) {
   const { text, files } = payload
   if (!text.trim() && files.length === 0) return
 
@@ -83,27 +84,63 @@ function handleBottomInputSend(payload) {
   isTyping.value = true
   saveCurrentSession()
   // 用户消息发出后立即滚动到底部
-  nextTick(() => scrollToBottom())
+  await nextTick()
+  scrollToBottom()
 
-  // 模拟AI回复
-  setTimeout(async () => {
-    isTyping.value = false
-    const responses = [
-      '根据您的描述，我为您找到了以下相关信息：\n\n1. 知识库文档《电力设备检修规程》第三章相关内容\n2. 历史案例中相似问题的解决方案\n3. 最新的作业指导书该操作流程',
-      '这是一个常见的问题，我来为您详细解答...\n\n建议您按照以下步骤操作：\n1. 检查设备电源状态\n2. 确认连接线路\n3. 如仍有问题请联系技术支持',
-      '我已经分析了您提供的信息，以下是建议方案：\n\n• 优先检查安全防护措施\n• 参考知识库相关章节\n• 如需帮助可查看作业指引',
-    ]
-    const aiResponse = {
+  // 调用后端AI对话接口
+  try {
+    const response = await fetch('/api/weixiu/ai/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sessionId: currentSessionId.value,
+        userMessage: text.trim(),
+        images: files.filter(f => f.type === 'image').map(f => f.url)
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let aiContent = ''
+
+    const aiMessage = {
       id: Date.now() + 1,
       role: 'assistant',
-      content: responses[Math.floor(Math.random() * responses.length)],
+      content: '',
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     }
-    messages.value.push(aiResponse)
-    saveCurrentSession()
-    await nextTick()
-    scrollToBottom()
-  }, 1200)
+    messages.value.push(aiMessage)
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      const chunk = decoder.decode(value, { stream: true })
+      aiContent += chunk
+      aiMessage.content = aiContent
+      await nextTick()
+      scrollToBottom()
+    }
+  } catch (error) {
+    console.error('AI chat error:', error)
+    const aiMessage = {
+      id: Date.now() + 1,
+      role: 'assistant',
+      content: '抱歉，发生了错误，请稍后再试。',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    }
+    messages.value.push(aiMessage)
+  }
+
+  isTyping.value = false
+  saveCurrentSession()
+  await nextTick()
+  scrollToBottom()
 }
 
 // 创建新会话

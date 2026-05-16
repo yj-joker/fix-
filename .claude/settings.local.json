@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(dir \"C:\\\\Program Files\\\\Java\")",
+      "Bash(dir \"C:\\\\Program Files\\\\Oracle\\\\Java\")",
+      "Bash(rm -rf target)",
+      "Bash(mvn clean:*)",
+      "Read(//c/Users/c3223/Desktop/fix/fix/**)",
+      "Bash(set JAVA_HOME=C:Program FilesJavajdk-17)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8080\")",
+      "Bash(mysql:*)"
+    ]
+  }
+}

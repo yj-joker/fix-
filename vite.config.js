@@ -11,6 +11,18 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    open: false,
+    proxy: {
+      '/api/asr': {
+        target: 'http://localhost:8080/weixiu/ai',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/asr/, ''),
+      },
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      }
+    }
   }
 })
