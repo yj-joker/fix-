@@ -223,7 +223,7 @@ function getRankBadgeClass(index) {
           v-for="item in recommendList"
           :key="item.id"
           class="recommend-card"
-          @click="handleRead(item.id)"
+          @click="handleRead(item.manualId)"
         >
           <div class="recommend-cover">
             <svg v-if="(item.fileType || 'pdf').toLowerCase().replace(/^\./, '') === 'pdf'" class="file-icon-svg" viewBox="0 0 48 64" fill="none" xmlns="http://www.w3.org/2000/svg">
