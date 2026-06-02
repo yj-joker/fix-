@@ -32,8 +32,17 @@ function filterUsers() {
 async function loadUsers() {
   loading.value = true
   try {
-    const res = await getUserList({ page: 1, size: 1000 })
-    allUsers.value = res.data || []
+    const all = []
+    let page = 1
+    const size = 1000
+    while (true) {
+      const res = await getUserList({ page, size })
+      const records = res.data || []
+      all.push(...records)
+      if (records.length < size) break
+      page++
+    }
+    allUsers.value = all
   } catch (e) {
     ElMessage.error('加载用户列表失败')
   } finally {

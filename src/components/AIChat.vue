@@ -16,6 +16,8 @@ const props = defineProps({
 
 const isTyping = ref(false)
 const showHistory = ref(false)
+const userScrolledUp = ref(false)
+const userHasScrolledUp = ref(false)
 
 // 当前会话ID
 const currentSessionId = ref(Date.now().toString())
@@ -54,6 +56,7 @@ function loadSession(sessionId) {
     messages.value = session.messages
     currentSessionId.value = sessionId
     showHistory.value = false
+    userHasScrolledUp.value = false
     nextTick(() => scrollToBottom())
   }
 }
@@ -253,6 +256,7 @@ function createNewSession() {
     timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
   }]
   showHistory.value = false
+  userHasScrolledUp.value = false
 }
 
 // 删除会话
@@ -284,9 +288,24 @@ function clearChat() {
 
 function scrollToBottom() {
   const container = document.querySelector('.messages-container')
-  if (container) {
+  if (container && !userHasScrolledUp.value) {
     container.scrollTop = container.scrollHeight
   }
+}
+
+function handleScroll(e) {
+  const container = e.target
+  const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50
+  userScrolledUp.value = !isAtBottom
+  if (userScrolledUp.value) {
+    userHasScrolledUp.value = true
+  }
+}
+
+function scrollToLatest() {
+  userScrolledUp.value = false
+  userHasScrolledUp.value = false
+  nextTick(() => scrollToBottom())
 }
 
 onMounted(() => {
@@ -363,7 +382,7 @@ onMounted(() => {
     </div>
 
     <!-- Messages -->
-    <div class="messages-container">
+    <div class="messages-container" @scroll="handleScroll">
       <div
         v-for="msg in messages"
         :key="msg.id"
@@ -407,6 +426,16 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Scroll to bottom button -->
+    <transition name="fade">
+      <div v-if="userScrolledUp" class="scroll-to-bottom" @click="scrollToLatest">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+        </svg>
+        <span>回到最新</span>
+      </div>
+    </transition>
 
     <!-- Input -->
     <AIBottomInput @send="handleBottomInputSend" />
@@ -713,5 +742,42 @@ onMounted(() => {
   width: 100%;
   height: auto;
   display: block;
+}
+
+.scroll-to-bottom {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--plaza-bg-card);
+  border: 1px solid var(--plaza-border);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--plaza-text);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.scroll-to-bottom:hover {
+  background: var(--plaza-accent-soft);
+}
+
+.scroll-to-bottom svg {
+  transform: rotate(180deg);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
