@@ -84,3 +84,11 @@ export const maintenanceManualHeartbeat = (readSessionId) => {
     data: { readSessionId }
   })
 }
+
+/**
+ * 章节智能搜索（向量检索）
+ * @param {object} params - { query: string, topK?: number, chunkType?: string, manualId?: number }
+ */
+export const searchChapter = (params) => {
+  return request({ url: '/weixiu/maintenance-manual/search', method: 'POST', data: { topK: 20, ...params } })
+}
