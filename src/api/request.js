@@ -44,16 +44,11 @@ export async function request(options) {
   const contentType = response.headers.get('content-type')
   if (contentType && contentType.includes('application/json')) {
     let text = await response.text()
-    // 修复：大于 MAX_SAFE_INTEGER 的数字在解析前转为字符串，避免 JavaScript 精度丢失
-    // JavaScript 的 JSON.parse 会把超过 MAX_SAFE_INTEGER 的数字自动截断，reviver 无法恢复
-    // 因此在解析前用正则把大数（16位以上）转换成字符串
-    text = text.replace(/(\d{16,})/g, '"$1"')
-    const json = JSON.parse(text, (key, value) => {
-      if (typeof value === 'number' && Math.abs(value) > Number.MAX_SAFE_INTEGER) {
-        return String(value)
-      }
-      return value
-    })
+    // 在 JSON.parse 之前将超过安全范围的整数加引号转为字符串，
+    // 从根本上避免 IEEE-754 双精度浮点数解析时的精度丢失。
+    // reviver 方案无效：原生解析器在调用 reviver 前已将数字解析为 JS number，精度已丢失。
+    text = text.replace(/:(\s*)(-?\d{15,})(\s*[,}\]])/g, ':$1"$2"$3')
+    const json = JSON.parse(text)
     if (throwOnError && json.code !== '200') {
       throw new Error(json.message || json.msg || '请求失败')
     }
