@@ -137,6 +137,19 @@
 
   /* —— 字体 —— */
   --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --font-display: 'Bricolage Grotesque', 'Public Sans', 'Inter', sans-serif;
+
+  /* —— 应用外壳：工程控制台（深石墨 + 信号琥珀） —— */
+  --shell-ink: #15171c;
+  --shell-ink-soft: #1b1e25;
+  --shell-ink-raised: #21252e;
+  --shell-ink-line: rgba(255, 255, 255, 0.07);
+  --shell-ink-text: #c8cdd8;
+  --shell-ink-text-dim: #79818f;
+  --signal: #ffa62b;
+  --signal-strong: #ff8a00;
+  --signal-soft: rgba(255, 166, 43, 0.14);
+  --signal-line: rgba(255, 166, 43, 0.30);
 }
 
 *,
