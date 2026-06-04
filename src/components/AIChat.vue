@@ -15,6 +15,11 @@ const props = defineProps({
 })
 
 const isTyping = ref(false)
+const isGenerating = ref(false)   // 整个生成过程（用于显示「停止」按钮）
+const abortController = ref(null) // 当前流式请求的中断器
+function stopGeneration() {
+  if (abortController.value) abortController.value.abort()
+}
 const showHistory = ref(false)
 const userScrolledUp = ref(false)
 const userHasScrolledUp = ref(false)
@@ -95,6 +100,9 @@ async function handleBottomInputSend(payload) {
   }
   messages.value.push(userMessage)
   isTyping.value = true
+  isGenerating.value = true
+  const controller = new AbortController()
+  abortController.value = controller
   saveCurrentSession()
   await nextTick()
   scrollToBottom()
@@ -105,6 +113,7 @@ async function handleBottomInputSend(payload) {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify({
         session_id: currentSessionId.value,
         message: text.trim(),
@@ -154,7 +163,14 @@ async function handleBottomInputSend(payload) {
     }
 
     while (true) {
-        const { done, value } = await reader.read()
+        let done, value
+        try {
+          ({ done, value } = await reader.read())
+        } catch (e) {
+          // 用户点击「停止」→ abort 会让 read() 抛出，平滑跳出循环，保留已输出内容
+          if (controller.signal.aborted) break
+          throw e
+        }
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
         jsonBuffer += chunk
@@ -218,6 +234,14 @@ async function handleBottomInputSend(payload) {
       })
       stopTypewriter()
     } catch (error) {
+      // 在流真正开始前就被中断（abort 期间 fetch 直接抛 AbortError）
+      if (error.name === 'AbortError') {
+        isTyping.value = false
+        isGenerating.value = false
+        abortController.value = null
+        saveCurrentSession()
+        return
+      }
       stopTypewriter()
       console.error('AI chat error:', error)
       const errorContent = '抱歉，发生了错误，请稍后再试。'
@@ -241,6 +265,8 @@ async function handleBottomInputSend(payload) {
     }
 
   isTyping.value = false
+  isGenerating.value = false
+  abortController.value = null
   saveCurrentSession()
   await nextTick()
   scrollToBottom()
@@ -438,7 +464,7 @@ onMounted(() => {
     </transition>
 
     <!-- Input -->
-    <AIBottomInput @send="handleBottomInputSend" />
+    <AIBottomInput :generating="isGenerating" @send="handleBottomInputSend" @stop="stopGeneration" />
   </div>
 </template>
 

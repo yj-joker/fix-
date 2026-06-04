@@ -1,16 +1,22 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import RunningTasksTray from '@/components/RunningTasksTray.vue'
+import { notifyStore } from '@/stores/notifyStore'
 import {
   House,
   Search,
   DocumentChecked,
   ArrowDown,
   ChatDotRound,
+  Share,
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+
+// 登录后建立 WebSocket 通知连接 + 恢复后台任务对账
+onMounted(() => notifyStore.init())
 
 const isCollapsed = ref(true)
 
@@ -46,6 +52,7 @@ const menuItems = [
   { path: '/user/dashboard', name: '首页概览', icon: House },
   { path: '/user/search', name: '智能检索', icon: Search },
   { path: '/user/guide', name: '作业指引', icon: DocumentChecked },
+  { path: '/user/graph', name: '知识图谱', icon: Share },
   { path: '/user/ai-chat', name: 'AI 对话', icon: ChatDotRound },
 ]
 
@@ -135,8 +142,15 @@ function handleDropdown(command) {
 
       <!-- Page Content -->
       <main class="user-content">
-        <router-view />
+        <!-- 缓存 AI 对话页：切到别的页面时流式输出不中断 -->
+        <router-view v-slot="{ Component }">
+          <keep-alive include="UserAIChat">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </main>
+      <!-- 后台任务进行中托盘（全局固定定位） -->
+      <RunningTasksTray />
     </div>
   </div>
 </template>

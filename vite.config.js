@@ -4,6 +4,8 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
+  // sockjs-client 依赖全局 global 变量，浏览器环境用 globalThis 垫一下
+  define: { global: 'globalThis' },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')
@@ -25,6 +27,7 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        ws: true, // 允许 SockJS 的 websocket 传输经代理升级（/api/ws）
         rewrite: (path) => path.replace(/^\/api/, ''),
       }
     }

@@ -58,6 +58,11 @@ const routes = [
         component: () => import('../views/adminViews/AdminKnowledge.vue')
       },
       {
+        path: 'graph',
+        name: 'AdminKnowledgeGraph',
+        component: () => import('../views/adminViews/AdminKnowledgeGraph.vue')
+      },
+      {
         path: 'ai-chat',
         name: 'AdminAIChat',
         component: () => import('../views/adminViews/AdminAIChat.vue')
@@ -104,6 +109,11 @@ const routes = [
         path: 'guide',
         name: 'UserGuide',
         component: () => import('../views/userViews/UserGuide.vue')
+      },
+      {
+        path: 'graph',
+        name: 'UserKnowledgeGraph',
+        component: () => import('../views/userViews/UserKnowledgeGraph.vue')
       },
       {
         path: 'ai-chat',

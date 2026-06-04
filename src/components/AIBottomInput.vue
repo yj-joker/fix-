@@ -83,7 +83,19 @@
             <rect x="6" y="6" width="12" height="12" rx="2"/>
           </svg>
         </button>
+        <!-- 生成中：显示「停止」；否则显示「发送」 -->
         <button
+          v-if="generating"
+          class="icon-btn stop-btn"
+          title="停止生成"
+          @click="$emit('stop')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="6" width="12" height="12" rx="2"/>
+          </svg>
+        </button>
+        <button
+          v-else
           class="icon-btn send-btn"
           :class="{ 'enabled': canSend }"
           :disabled="!canSend"
@@ -118,7 +130,11 @@ import { ref, computed, onUnmounted } from 'vue'
 import { uploadAudio } from '@/api/asr'
 import { uploadImage } from '@/api/user'
 
-const emit = defineEmits(['send'])
+const props = defineProps({
+  // 父级是否正在生成回答（用于把「发送」切换成「停止」）
+  generating: { type: Boolean, default: false }
+})
+const emit = defineEmits(['send', 'stop'])
 
 const inputValue = ref('')
 const isThinking = ref(false)
@@ -512,6 +528,17 @@ onUnmounted(() => {
 
 .send-btn:disabled {
   cursor: not-allowed;
+}
+
+.stop-btn {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 6px 16px -4px rgba(239, 68, 68, 0.5);
+}
+
+.stop-btn:hover {
+  background: #dc2626;
+  transform: scale(0.95);
 }
 
 .upload-preview {

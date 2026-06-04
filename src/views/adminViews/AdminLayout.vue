@@ -1,6 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import RunningTasksTray from '@/components/RunningTasksTray.vue'
+import { notifyStore } from '@/stores/notifyStore'
 import {
   House,
   User,
@@ -11,10 +13,14 @@ import {
   Check,
   Search,
   ChatDotRound,
+  Share,
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+
+// 登录后建立 WebSocket 通知连接 + 恢复后台任务对账
+onMounted(() => notifyStore.init())
 
 const isCollapsed = ref(true)
 const headerSearchQuery = ref('')
@@ -32,6 +38,7 @@ const menuItems = [
   { path: '/admin/dashboard', name: '首页概览', icon: House },
   { path: '/admin/users', name: '用户管理', icon: User },
   { path: '/admin/knowledge', name: '知识库管理', icon: Document },
+  { path: '/admin/graph', name: '知识图谱', icon: Share },
   { path: '/admin/ai-chat', name: 'AI 对话', icon: ChatDotRound },
   { path: '/admin/settings', name: '系统设置', icon: Setting },
 ]
@@ -140,8 +147,15 @@ function handleDropdown(command) {
 
       <!-- Page Content -->
       <main class="admin-content">
-        <router-view />
+        <!-- 缓存 AI 对话页：切到别的页面时流式输出不中断 -->
+        <router-view v-slot="{ Component }">
+          <keep-alive include="AdminAIChat">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </main>
+      <!-- 后台任务进行中托盘（全局固定定位） -->
+      <RunningTasksTray />
     </div>
   </div>
 </template>
