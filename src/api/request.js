@@ -44,10 +44,12 @@ export async function request(options) {
   const contentType = response.headers.get('content-type')
   if (contentType && contentType.includes('application/json')) {
     let text = await response.text()
-    // 修复：大于 MAX_SAFE_INTEGER 的数字在解析前转为字符串，避免 JavaScript 精度丢失
+    // 修复：大于 MAX_SAFE_INTEGER 的「大整数」在解析前转为字符串，避免 JavaScript 精度丢失
     // JavaScript 的 JSON.parse 会把超过 MAX_SAFE_INTEGER 的数字自动截断，reviver 无法恢复
-    // 因此在解析前用正则把大数（16位以上）转换成字符串
-    text = text.replace(/(\d{16,})/g, '"$1"')
+    // 注意：必须只匹配「整数 token」——用前后断言排除小数 / 科学计数，
+    //       否则会把长小数（如向量、余弦分数 0.873429102938...）的尾巴也加上引号，
+    //       导致 JSON.parse 抛 "Unterminated fractional number"
+    text = text.replace(/(?<![\d.])(\d{16,})(?![\d.eE])/g, '"$1"')
     const json = JSON.parse(text, (key, value) => {
       if (typeof value === 'number' && Math.abs(value) > Number.MAX_SAFE_INTEGER) {
         return String(value)
