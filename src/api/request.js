@@ -56,6 +56,12 @@ export async function request(options) {
       }
       return value
     })
+    // 会话失效（后端 SessionInterceptor 返回 401）：清登录态并跳登录页。
+    // 登录页自身的请求不处理，避免回环。
+    if (json && String(json.code) === '401' && location.pathname !== '/login') {
+      try { localStorage.removeItem('userInfo') } catch (e) {}
+      location.href = '/login'
+    }
     if (throwOnError && json.code !== '200') {
       throw new Error(json.message || json.msg || '请求失败')
     }

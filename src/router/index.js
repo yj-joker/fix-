@@ -134,4 +134,16 @@ const router = createRouter({
   routes
 })
 
+// 全局登录守卫：/admin 与 /user 下的页面需登录，未登录直接跳登录页，
+// 从根上避免「未登录就挂载布局 → 触发 WebSocket 握手鉴权失败」。
+router.beforeEach((to, from, next) => {
+  const isAuthed = !!localStorage.getItem('userInfo')
+  const needsAuth = to.path.startsWith('/admin') || to.path.startsWith('/user')
+  if (needsAuth && !isAuthed) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
+})
+
 export default router

@@ -105,12 +105,15 @@ export const notifyStore = {
   /** 登录后调用：连接 WebSocket + 恢复未完成任务并对账 */
   init() {
     if (started) return
+    // 未登录不建立连接，避免握手鉴权必然失败 + 无限重连刷日志
+    if (!localStorage.getItem('userInfo')) return
     started = true
     loadJobs()
     connectNotify({
       onMessage: handleMessage,
       onConnect: () => { state.connected = true; reconcileAll() },
       onDisconnect: () => { state.connected = false },
+      onAuthFail: () => { started = false; stopTimer() }, // 会话失效：停止重连（跳转交给路由守卫 / 401 处理）
     })
     if (hasRunning()) startTimer()
     reconcileAll()

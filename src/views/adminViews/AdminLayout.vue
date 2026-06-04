@@ -48,6 +48,8 @@ function goToHome() {
 }
 
 function goToLogin() {
+  notifyStore.stop()                       // 断开 WS，避免登出后无限重连握手失败
+  localStorage.removeItem('userInfo')
   router.push('/login')
 }
 
