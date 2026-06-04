@@ -429,7 +429,7 @@ onMounted(() => {
               <img :src="img" alt="上传图片" />
             </div>
           </div>
-          <div class="message-text" v-html="msg.content.replace(/\n/g, '<br>')"></div>
+          <div v-if="msg.content && msg.content.trim()" class="message-text" v-html="msg.content.replace(/\n/g, '<br>')"></div>
           <div class="message-time">{{ msg.timestamp }}</div>
         </div>
       </div>
