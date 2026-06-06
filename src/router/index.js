@@ -58,6 +58,11 @@ const routes = [
         component: () => import('../views/adminViews/AdminKnowledge.vue')
       },
       {
+        path: 'graph',
+        name: 'AdminKnowledgeGraph',
+        component: () => import('../views/adminViews/AdminKnowledgeGraph.vue')
+      },
+      {
         path: 'ai-chat',
         name: 'AdminAIChat',
         component: () => import('../views/adminViews/AdminAIChat.vue')
@@ -106,6 +111,11 @@ const routes = [
         component: () => import('../views/userViews/UserGuide.vue')
       },
       {
+        path: 'graph',
+        name: 'UserKnowledgeGraph',
+        component: () => import('../views/userViews/UserKnowledgeGraph.vue')
+      },
+      {
         path: 'ai-chat',
         name: 'UserAIChat',
         component: () => import('../views/userViews/UserAIChat.vue')
@@ -114,6 +124,16 @@ const routes = [
         path: 'search-result',
         name: 'UserSearchResult',
         component: () => import('../views/userViews/UserSearchResult.vue')
+      },
+      {
+        path: 'tasks',
+        name: 'UserTasks',
+        component: () => import('../views/userViews/UserTasks.vue')
+      },
+      {
+        path: 'tasks/:id',
+        name: 'UserTaskDetail',
+        component: () => import('../views/userViews/UserTaskDetail.vue')
       }
     ]
   }
@@ -122,6 +142,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 全局登录守卫：/admin 与 /user 下的页面需登录，未登录直接跳登录页，
+// 从根上避免「未登录就挂载布局 → 触发 WebSocket 握手鉴权失败」。
+router.beforeEach((to, from, next) => {
+  const isAuthed = !!localStorage.getItem('userInfo')
+  const needsAuth = to.path.startsWith('/admin') || to.path.startsWith('/user')
+  if (needsAuth && !isAuthed) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
 })
 
 export default router

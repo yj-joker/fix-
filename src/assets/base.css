@@ -1,8 +1,13 @@
-/* 应用主题色变量 - 暖色简洁SaaS风格 */
+/* ============================================================
+   设计令牌 - 清爽现代 SaaS（蓝色主调）
+   说明：保留全部历史变量名，统一映射到新的蓝色体系，
+   令引用变量的组件与硬编码 #3b82f6 的组件视觉一致。
+   ============================================================ */
 :root {
+  /* —— 中性底色 —— */
   --vt-c-white: #ffffff;
-  --vt-c-white-soft: #fefcf8;
-  --vt-c-white-mute: #faf5f0;
+  --vt-c-white-soft: #fbfcfe;
+  --vt-c-white-mute: #f4f6fa;
 
   --vt-c-black: #0f172a;
   --vt-c-black-soft: #1e293b;
@@ -10,15 +15,15 @@
 
   --vt-c-indigo: #1e3a5f;
 
-  /* 应用主色 - 暖橙色点缀 */
-  --app-primary: #334155;
-  --app-primary-light: #475569;
-  --app-primary-dark: #1e3a5f;
-  --app-primary-bg: rgba(51, 65, 85, 0.08);
-  --app-accent: #334155;
-  --app-success: #22c55e;
-  --app-shadow: 0 4px 24px rgba(51, 65, 85, 0.06);
-  --app-shadow-hover: 0 8px 32px rgba(51, 65, 85, 0.1);
+  /* —— 品牌主色：蓝 —— */
+  --app-primary: #3b82f6;
+  --app-primary-light: #60a5fa;
+  --app-primary-dark: #2563eb;
+  --app-primary-bg: rgba(59, 130, 246, 0.08);
+  --app-accent: #3b82f6;
+  --app-success: #16a34a;
+  --app-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
+  --app-shadow-hover: 0 8px 28px rgba(16, 24, 40, 0.10);
 
   --color-background: var(--plaza-bg);
   --color-background-soft: var(--plaza-bg-card);
@@ -26,89 +31,125 @@
 
   --color-border: var(--plaza-border);
   --color-border-hover: var(--plaza-accent);
-  --color-heading: var(--plaza-text);
+  --color-heading: var(--plaza-heading);
   --color-text: var(--plaza-text);
 
-  /* 矿石白+克制蓝 配色 */
-  --atmospheric-bg-from: #F8F9FF;
-  --atmospheric-bg-to: #F8F9FF;
-  --plaza-bg: #F8F9FF;
-  --plaza-bg-card: #FFFFFF;
-  --plaza-bg-input: #F8F9FF;
-  --plaza-accent: #334155;
-  --plaza-accent-hover: #1e3a5f;
-  --plaza-tag-bg: #334155;
-  --plaza-accent-soft: rgba(51, 65, 85, 0.1);
-  --plaza-accent-soft-strong: rgba(51, 65, 85, 0.18);
+  /* —— 主配色：清爽现代 SaaS —— */
+  --atmospheric-bg-from: #f6f8fb;
+  --atmospheric-bg-to: #f6f8fb;
+  --plaza-bg: #f6f8fb;
+  --plaza-bg-card: #ffffff;
+  --plaza-bg-input: #f7f9fc;
+  --plaza-accent: #3b82f6;
+  --plaza-accent-hover: #2563eb;
+  --plaza-tag-bg: #3b82f6;
+  --plaza-accent-soft: rgba(59, 130, 246, 0.10);
+  --plaza-accent-soft-strong: rgba(59, 130, 246, 0.18);
+  --plaza-heading: #0f172a;
   --plaza-text: #334155;
-  --plaza-text-muted: #64748B;
-  --plaza-border: #CBDBF5;
-  --plaza-panel-bg: #F8F9FF;
-  --plaza-link: #334155;
-  --plaza-grid-light: #FFFFFF;
-  --plaza-grid-dark: #F8F9FF;
+  --plaza-text-muted: #64748b;
+  --plaza-border: #e6eaf1;
+  --plaza-border-strong: #d4dbe6;
+  --plaza-panel-bg: #f7f9fc;
+  --plaza-link: #3b82f6;
+  --plaza-grid-light: #ffffff;
+  --plaza-grid-dark: #f6f8fb;
 
-  /* 阴影：轻微柔和 */
-  --plaza-shadow-organic: 0 2px 12px rgba(51, 65, 85, 0.04), 0 1px 3px rgba(51, 65, 85, 0.02);
-  --plaza-shadow-organic-hover: 0 8px 30px rgba(51, 65, 85, 0.08), 0 2px 6px rgba(51, 65, 85, 0.04);
-  --plaza-radius: 8px;
-  --plaza-radius-lg: 12px;
+  /* —— 语义色 —— */
+  --plaza-success: #16a34a;
+  --plaza-success-soft: #f0fdf4;
+  --plaza-warning: #f59e0b;
+  --plaza-warning-soft: #fff7ed;
+  --plaza-danger: #ef4444;
+  --plaza-danger-soft: #fef2f2;
+  --plaza-info: #3b82f6;
+  --plaza-info-soft: #eff6ff;
 
-  /* 首页按钮：专业蓝 + 白色字 */
-  --home-btn-sage: #334155;
-  --home-btn-sage-hover: #1e3a5f;
-  --home-btn-text: #FFFFFF;
+  /* —— 阴影：柔和冷调 —— */
+  --plaza-shadow-organic: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.05);
+  --plaza-shadow-organic-hover: 0 8px 28px rgba(16, 24, 40, 0.10), 0 2px 6px rgba(16, 24, 40, 0.05);
+  --plaza-radius-sm: 8px;
+  --plaza-radius: 10px;
+  --plaza-radius-lg: 14px;
+
+  /* —— 首页 / 主按钮 —— */
+  --home-btn-sage: #3b82f6;
+  --home-btn-sage-hover: #2563eb;
+  --home-btn-text: #ffffff;
   --home-btn-radius: 12px;
 
-  /* 弹窗 */
-  --dialog-dark-bg: #FFFFFF;
-  --dialog-dark-header: rgba(248, 249, 255, 0.98);
-  --dialog-dark-border: #CBDBF5;
-  --dialog-dark-text: #334155;
-  --dialog-dark-muted: #64748B;
+  /* —— 弹窗 —— */
+  --dialog-dark-bg: #ffffff;
+  --dialog-dark-header: rgba(247, 249, 252, 0.98);
+  --dialog-dark-border: #e6eaf1;
+  --dialog-dark-text: #0f172a;
+  --dialog-dark-muted: #64748b;
 
-  /* Element Plus 覆盖 */
-  --el-bg-color: #F8F9FF;
-  --el-bg-color-overlay: #FFFFFF;
-  --el-bg-color-page: #F8F9FF;
-  --el-fill-color: #F8F9FF;
-  --el-fill-color-light: #CBDBF5;
-  --el-fill-color-lighter: #F8F9FF;
-  --el-fill-color-blank: #FFFFFF;
-  --el-text-color-primary: #334155;
+  /* —— Element Plus 覆盖 —— */
+  --el-bg-color: #ffffff;
+  --el-bg-color-overlay: #ffffff;
+  --el-bg-color-page: #f6f8fb;
+  --el-fill-color: #f7f9fc;
+  --el-fill-color-light: #f3f6fb;
+  --el-fill-color-lighter: #f7f9fc;
+  --el-fill-color-blank: #ffffff;
+  --el-text-color-primary: #0f172a;
   --el-text-color-regular: #334155;
-  --el-text-color-secondary: #64748B;
-  --el-text-color-placeholder: #94A3B8;
-  --el-border-color: #CBDBF5;
-  --el-border-color-light: #CBDBF5;
-  --el-border-color-lighter: #F8F9FF;
-  --el-border-color-extra-light: #F8F9FF;
-  --el-border-color-dark: #B8C9E0;
-  --el-fill-color-dark: #B8C9E0;
+  --el-text-color-secondary: #64748b;
+  --el-text-color-placeholder: #94a3b8;
+  --el-border-color: #e6eaf1;
+  --el-border-color-light: #eef1f6;
+  --el-border-color-lighter: #f3f6fb;
+  --el-border-color-extra-light: #f7f9fc;
+  --el-border-color-dark: #d4dbe6;
+  --el-border-color-hover: #b9c4d4;
+  --el-fill-color-dark: #eef1f6;
   --el-color-white: #ffffff;
   --el-color-black: #000000;
-  --el-color-primary: #334155;
-  --el-color-success: #22c55e;
-  --el-color-warning: #F59E0B;
+  --el-color-primary: #3b82f6;
+  --el-color-primary-light-3: #6fa8fa;
+  --el-color-primary-light-5: #9cc4fc;
+  --el-color-primary-light-7: #c6dcfd;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #2563eb;
+  --el-color-success: #16a34a;
+  --el-color-warning: #f59e0b;
   --el-color-danger: #ef4444;
-  --el-color-info: #64748B;
-  --el-svg-icon-color: #334155;
+  --el-color-error: #ef4444;
+  --el-color-info: #64748b;
+  --el-svg-icon-color: #64748b;
+  --el-border-radius-base: 10px;
+  --el-box-shadow-light: 0 1px 2px rgba(16, 24, 40, 0.05);
 
-  /* 步骤序号背景色 */
-  --step-num-bg: #CBDBF5;
-  --step-num-text: #334155;
+  /* —— 步骤序号 —— */
+  --step-num-bg: #dbeafe;
+  --step-num-text: #2563eb;
 
-  /* Profile 页面兼容变量 */
-  --primary-blue: #334155;
-  --light-blue: #CBDBF5;
-  --text-dark: #334155;
-  --text-gray: #64748B;
-  --bg-light: #F8F9FF;
-  --hover-blue: rgba(51, 65, 85, 0.08);
-  --border-color: #CBDBF5;
+  /* —— Profile 页面兼容 —— */
+  --primary-blue: #3b82f6;
+  --light-blue: #dbeafe;
+  --text-dark: #0f172a;
+  --text-gray: #64748b;
+  --bg-light: #f6f8fb;
+  --hover-blue: rgba(59, 130, 246, 0.08);
+  --border-color: #e6eaf1;
 
-  /* 字体 */
+  /* —— 字体 —— */
   --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --font-display: 'Bricolage Grotesque', 'Public Sans', 'Inter', sans-serif;
+
+  /* —— 应用外壳：工程控制台（深石墨 + 信号琥珀） —— */
+  --shell-ink: #15171c;
+  --shell-ink-soft: #1b1e25;
+  --shell-ink-raised: #21252e;
+  --shell-ink-line: rgba(255, 255, 255, 0.07);
+  --shell-ink-text: #c8cdd8;
+  --shell-ink-text-dim: #79818f;
+  --signal: #ffa62b;
+  --signal-strong: #ff8a00;
+  --signal-soft: rgba(255, 166, 43, 0.14);
+  --signal-line: rgba(255, 166, 43, 0.30);
 }
 
 *,
@@ -130,7 +171,7 @@ body {
   height: 100%;
   color: var(--plaza-text);
   background: var(--plaza-bg);
-  line-height: 1.5;
+  line-height: 1.55;
   font-family:
     'Public Sans',
     'Inter',
@@ -158,4 +199,23 @@ button {
 
 input, textarea, select {
   font-family: inherit;
+}
+
+/* —— 全局滚动条：细、冷灰、悬停加深 —— */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #d4dbe6;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #b9c4d4;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
 }

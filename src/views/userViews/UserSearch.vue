@@ -342,8 +342,8 @@ function getRankBadgeClass(index) {
             >
               <div class="recommend-cover">
                 <svg v-if="(item.fileType || 'pdf').toLowerCase().replace(/^\./, '') === 'pdf'" class="file-icon-svg" viewBox="0 0 48 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 4h24l12 12v44H8V4z" fill="#F8F9FF" stroke="#334155" stroke-width="1.5"/>
-                  <path d="M28 4v12h12" fill="#CBDBF5" stroke="#334155" stroke-width="1.5"/>
+                  <path d="M8 4h24l12 12v44H8V4z" fill="#f6f8fb" stroke="#334155" stroke-width="1.5"/>
+                  <path d="M28 4v12h12" fill="#e6eaf1" stroke="#334155" stroke-width="1.5"/>
                   <rect x="14" y="26" width="20" height="3" rx="1.5" fill="#334155" opacity="0.6"/>
                   <rect x="14" y="33" width="16" height="3" rx="1.5" fill="#334155" opacity="0.4"/>
                   <rect x="14" y="40" width="18" height="3" rx="1.5" fill="#334155" opacity="0.25"/>

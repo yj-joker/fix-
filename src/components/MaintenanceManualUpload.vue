@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { Upload, Document, Plus, Check, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { uploadMaintenanceManual } from '@/api/maintenanceManual'
+import { notifyStore } from '@/stores/notifyStore'
 
 const emit = defineEmits(['success'])
 
@@ -85,6 +86,10 @@ async function uploadFiles() {
       const res = await uploadMaintenanceManual(formData)
       if (res.code === '200' || res.code === 200) {
         item.status = 'success'
+        // 登记后台「知识导入」任务：解析+向量化+图谱抽取是分钟级异步，完成后由 WebSocket 通知
+        if (res.data?.id) {
+          notifyStore.trackKnowledgeImport(res.data.id, `知识导入：${res.data.manualName || item.name || '手册'}`)
+        }
         emit('success', res.data)
       } else {
         item.status = 'error'
