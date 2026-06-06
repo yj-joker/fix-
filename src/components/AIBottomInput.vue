@@ -71,7 +71,7 @@
         <button
           class="icon-btn voice-btn"
           :class="{ 'recording': isRecording }"
-          :disabled="isFlushingPending && !isRecording"
+          :disabled="isCompletingTranscription || (isFlushingPending && !isRecording)"
           @click="toggleRecording"
         >
           <svg v-if="!isRecording" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -144,13 +144,14 @@ const textInput = ref(null)
 // Recording state
 const isRecording = ref(false)
 const isFlushingPending = ref(false) // 正在流式输出 pendingText，按钮禁用
+const isCompletingTranscription = ref(false) // 停止录音后等待最后转译完成
 let mediaRecorder = null
 let audioStream = null
 let currentChunks = []
 let sendInterval = null
 let typeInterval = null // 打字机效果定时器
-let pendingText = '' // 上一轮识别结果，等待流式输出
-let isFirstChunk = true // 第一个3秒标记
+let pendingText = '' // 待打字机输出的文本
+let pendingRequestCount = 0 // 在途 ASR 请求计数
 
 const canSend = computed(() => inputValue.value.trim().length > 0 || uploadedFiles.value.length > 0)
 
@@ -168,15 +169,20 @@ const toggleRecording = () => {
 }
 
 const canToggleRecording = computed(() => {
-  // 录音中 或 流式输出中 都可切换（流式输出时按停止会触发 flush）
-  return !isFlushingPending.value || isRecording.value
+  // 录音中允许随时停止；非录音中只在不刷新且不等待转译完成时允许开始
+  return isRecording.value || (!isFlushingPending.value && !isCompletingTranscription.value)
 })
+
+const checkCompletionState = () => {
+  if (!isRecording.value && pendingRequestCount === 0 && !isFlushingPending.value) {
+    isCompletingTranscription.value = false
+  }
+}
 
 // 流式打字效果：将 pendingText 逐字输出到 inputValue
 const flushPending = () => {
-  if (!pendingText) return
+  if (!pendingText || isFlushingPending.value) return
   isFlushingPending.value = true
-  isRecording.value = false // 按钮状态切换
 
   let index = 0
   typeInterval = setInterval(() => {
@@ -188,7 +194,7 @@ const flushPending = () => {
       typeInterval = null
       pendingText = ''
       isFlushingPending.value = false
-      // 恢复录音按钮可点击
+      checkCompletionState()
     }
   }, 50)
 }
@@ -207,60 +213,32 @@ const startNewMediaRecorder = () => {
   }
 
   mediaRecorder.onstop = () => {
-    // stop() 触发最终 dataavailable（包含完整 WebM 头部），随后触发 onstop
-    // 此时 currentChunks 已包含当前段的完整数据
-
     if (currentChunks.length > 0) {
       const chunksToSend = currentChunks
       currentChunks = []
       const blob = new Blob(chunksToSend, { type: 'audio/webm' })
       const file = new File([blob], `chunk_${Date.now()}.webm`, { type: 'audio/webm' })
 
+      pendingRequestCount++
       uploadAudio(file, file.name).then(result => {
+        pendingRequestCount--
         if (result.text) {
-          if (isFirstChunk) {
-            // 第一个3s：不输出，存入pending，等下一个3s再输出
-            pendingText = result.text
-            isFirstChunk = false
-            // 如果还在录音，重启 MediaRecorder 继续录下一个3s
-            if (isRecording.value && audioStream) {
-              startNewMediaRecorder()
-            }
-          } else {
-            // 非第一个3s：先把上一轮pending流式输出，把本轮结果存入pending
-            const prevText = pendingText
-            pendingText = result.text
-
-            // 流式打字效果
-            isFlushingPending.value = true
-            let index = 0
-            typeInterval = setInterval(() => {
-              if (index < prevText.length) {
-                inputValue.value += prevText[index]
-                index++
-              } else {
-                clearInterval(typeInterval)
-                typeInterval = null
-                isFlushingPending.value = false
-                // flush完成后，如果还在录音，重启 MediaRecorder 继续录下一个3s
-                if (isRecording.value && audioStream) {
-                  startNewMediaRecorder()
-                }
-              }
-            }, 50)
+          pendingText += result.text
+          if (!isFlushingPending.value) {
+            flushPending()
           }
         }
+        checkCompletionState()
       }).catch(e => {
+        pendingRequestCount--
         console.error('ASR chunk failed:', e)
-        if (isFirstChunk) {
-          isFirstChunk = false
-        }
+        checkCompletionState()
       })
-    } else {
-      // 没有音频数据（停止录音时最后一个chunk可能为空）
-      if (isRecording.value && audioStream) {
-        startNewMediaRecorder()
-      }
+    }
+
+    // 立即重启 MediaRecorder，减少录音间隙
+    if (isRecording.value && audioStream) {
+      startNewMediaRecorder()
     }
   }
 
@@ -270,6 +248,10 @@ const startNewMediaRecorder = () => {
 const startRecording = async () => {
   try {
     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    // 重置所有转译状态
+    isCompletingTranscription.value = false
+    pendingText = ''
+    pendingRequestCount = 0
     startNewMediaRecorder()
     isRecording.value = true
     textInput.value?.focus()
@@ -289,18 +271,27 @@ const stopRecording = () => {
     clearInterval(sendInterval)
     sendInterval = null
   }
-  // 先标记停止，onstop 中不会再重启 MediaRecorder
+  isCompletingTranscription.value = true // 先锁定麦克风按钮
   isRecording.value = false
+
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop()
+    // 触发 onstop → uploadAudio，pendingRequestCount 可能非零
   }
+
   if (audioStream) {
     audioStream.getTracks().forEach(track => track.stop())
     audioStream = null
   }
-  // 如果有剩余pendingText，停止后立即流式输出
+
+  // 防御性调用：如果有 pendingText 且 typewriter 未启动，就启动
   if (pendingText && !isFlushingPending.value) {
     flushPending()
+  }
+
+  // 如果没有在途请求也没有 typewriter 在跑，立即标记完成
+  if (pendingRequestCount === 0 && !isFlushingPending.value) {
+    isCompletingTranscription.value = false
   }
 }
 
@@ -508,6 +499,13 @@ onUnmounted(() => {
   background: #fef2f2;
   color: #ef4444;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.voice-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: #e5e7eb;
+  color: #9ca3af;
 }
 
 .send-btn {

@@ -698,7 +698,13 @@ onMounted(() => {
 }
 
 .message-content {
-  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-message .message-content {
+  align-items: flex-end;
 }
 
 .message-text {

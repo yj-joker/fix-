@@ -140,20 +140,15 @@ function changeRankType(type) {
 
 // ── 章节搜索：直接打开 PDF（不创建阅读会话） ──
 async function openChapterInPdf(item) {
-  try {
-    const res = await getMaintenanceManualDetail(item.manualId)
-    let fileUrl = res.data?.fileUrl || res.data?.sourceFileUrl
-    if (!fileUrl) {
-      ElMessage.error('文件链接不存在，请确认该手册已上传并解析完成')
-      return
-    }
-    if (item.page) {
-      fileUrl = `${fileUrl}#page=${item.page}`
-    }
-    window.open(fileUrl, '_blank')
-  } catch (e) {
-    ElMessage.error('打开手册失败：' + (e.message || '请稍后重试'))
+  let fileUrl = item.sourceFileUrl
+  if (!fileUrl) {
+    ElMessage.error('文件链接不存在，请确认该手册已上传并解析完成')
+    return
   }
+  if (item.page) {
+    fileUrl = `${fileUrl}#page=${item.page}`
+  }
+  window.open(fileUrl, '_blank')
 }
 
 // ── 章节搜索：内容类型过滤切换 ──
