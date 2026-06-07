@@ -1,5 +1,6 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { ChatDotRound, Delete, Clock, Folder } from '@element-plus/icons-vue'
 import AIBottomInput from '@/components/AIBottomInput.vue'
 
@@ -11,6 +12,19 @@ const props = defineProps({
   welcomeMessage: {
     type: String,
     default: '您好！我是AI助手，可以帮助您进行知识库检索、案例分析和作业指引等操作。有什么可以帮助您的吗？'
+  }
+})
+
+const route = useRoute()
+
+// 用户头像首字：登录后从 localStorage 读 userInfo.name 取首字，与 UserLayout / AdminLayout 一致
+const userInitial = computed(() => {
+  const fallback = route.path.startsWith('/admin') ? 'A' : 'U'
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    return userInfo.name ? userInfo.name[0] : fallback
+  } catch {
+    return fallback
   }
 })
 
@@ -433,10 +447,15 @@ onMounted(() => {
         :class="{ 'user-message': msg.role === 'user', 'ai-message': msg.role === 'assistant' }"
       >
         <div class="message-avatar">
-          <div v-if="msg.role === 'user'" class="avatar user-avatar">U</div>
+          <div v-if="msg.role === 'user'" class="avatar user-avatar">{{ userInitial }}</div>
           <div v-else class="avatar ai-avatar">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 8V4H8"/>
+              <rect width="16" height="12" x="4" y="8" rx="2"/>
+              <path d="M2 14h2"/>
+              <path d="M20 14h2"/>
+              <path d="M15 13v2"/>
+              <path d="M9 13v2"/>
             </svg>
           </div>
         </div>
@@ -455,8 +474,13 @@ onMounted(() => {
       <div v-if="isTyping" class="message-item ai-message">
         <div class="message-avatar">
           <div class="avatar ai-avatar">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 8V4H8"/>
+              <rect width="16" height="12" x="4" y="8" rx="2"/>
+              <path d="M2 14h2"/>
+              <path d="M20 14h2"/>
+              <path d="M15 13v2"/>
+              <path d="M9 13v2"/>
             </svg>
           </div>
         </div>
@@ -693,7 +717,7 @@ onMounted(() => {
 }
 
 .ai-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: #fff;
 }
 

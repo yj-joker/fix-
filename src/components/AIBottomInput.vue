@@ -429,10 +429,10 @@ onUnmounted(() => {
 }
 
 .action-tag.active {
-  background: #8b5cf6;
-  border-color: #8b5cf6;
+  background: #3b82f6;
+  border-color: #3b82f6;
   color: #fff;
-  box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.4);
 }
 
 .action-tag.active .tag-icon {
@@ -469,8 +469,8 @@ onUnmounted(() => {
 
 .text-input:focus {
   background: #fff;
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .icon-btn {
@@ -514,13 +514,13 @@ onUnmounted(() => {
 }
 
 .send-btn.enabled {
-  background: #8b5cf6;
+  background: #3b82f6;
   color: #fff;
-  box-shadow: 0 6px 16px -4px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 6px 16px -4px rgba(59, 130, 246, 0.5);
 }
 
 .send-btn.enabled:hover {
-  background: #7c3aed;
+  background: #2563eb;
   transform: scale(0.95);
 }
 
