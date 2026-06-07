@@ -1,5 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Edit, View, Upload, DocumentDelete, Check, Box, WarningFilled, Delete } from '@element-plus/icons-vue'
 import {
@@ -272,7 +273,30 @@ function sourceLabel(sourceType) {
   return map[sourceType] || sourceType || '手动创建'
 }
 
-onMounted(() => loadList(1))
+const route = useRoute()
+const router = useRouter()
+
+// 从「沉淀审核」跳转过来时携带 ?edit={id}，自动打开该规程的编辑弹窗（复用现有编辑流程）
+async function openEditByIdFromQuery() {
+  const editId = route.query.edit
+  if (!editId) return
+  try {
+    const res = await getProcedureDetail(editId)
+    if ((res.code === '200' || res.code === 200) && res.data) {
+      openEdit(res.data)
+    }
+  } catch {
+    ElMessage.warning('未找到要编辑的规程')
+  } finally {
+    // 清掉 query，避免刷新/返回时重复弹出
+    router.replace({ query: {} })
+  }
+}
+
+onMounted(async () => {
+  await loadList(1)
+  openEditByIdFromQuery()
+})
 </script>
 
 <template>

@@ -1,8 +1,45 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, ArrowDown, ArrowUp, DocumentAdd, Share, CloseBold } from '@element-plus/icons-vue'
+import { Refresh, ArrowDown, ArrowUp, DocumentAdd, Share, CloseBold, Plus, Delete } from '@element-plus/icons-vue'
 import { getTaskList, promoteToProcedure, promoteToGraph, skipPromotion } from '../api/task'
+
+const router = useRouter()
+
+/* ---------- 图谱沉淀：可编辑模型（按 task.id 缓存） ---------- */
+const editModels = reactive({})
+const SEVERITY_OPTIONS = ['一般', '严重', '紧急']
+
+function buildEditModel(task) {
+  const raw = formatGraphExtraction(task.graphExtraction) || {}
+  return reactive({
+    deviceName: raw.deviceName || (raw.deviceNames && raw.deviceNames[0]) || task.deviceName || '',
+    procedureId: typeof raw.procedureId === 'number' ? raw.procedureId : null,
+    components: (raw.components || []).map((c) => ({ name: c.name || '', specification: c.specification || '' })),
+    faults: (raw.faults || []).map((f) => ({ name: f.name || '', severity: f.severity || '一般', relatedComponent: f.relatedComponent || '' })),
+    solutions: (raw.solutions || []).map((s) => ({ title: s.title || '', summary: s.summary || '', relatedFault: s.relatedFault || '' })),
+  })
+}
+
+function ensureModel(task) {
+  if (!editModels[task.id]) editModels[task.id] = buildEditModel(task)
+  return editModels[task.id]
+}
+
+function componentNames(task) {
+  return (editModels[task.id]?.components || []).map((c) => c.name).filter(Boolean)
+}
+function faultNames(task) {
+  return (editModels[task.id]?.faults || []).map((f) => f.name).filter(Boolean)
+}
+
+function addComponent(task) { ensureModel(task).components.push({ name: '', specification: '' }) }
+function removeComponent(task, i) { ensureModel(task).components.splice(i, 1) }
+function addFault(task) { ensureModel(task).faults.push({ name: '', severity: '一般', relatedComponent: '' }) }
+function removeFault(task, i) { ensureModel(task).faults.splice(i, 1) }
+function addSolution(task) { ensureModel(task).solutions.push({ title: '', summary: '', relatedFault: '' }) }
+function removeSolution(task, i) { ensureModel(task).solutions.splice(i, 1) }
 
 /* ---------- Props ---------- */
 const props = defineProps({
@@ -49,10 +86,14 @@ async function loadTasks() {
   }
 }
 
-function toggleExpand(taskId) {
+function toggleExpand(task) {
+  const taskId = typeof task === 'object' ? task.id : task
   const s = new Set(expandedCards.value)
   if (s.has(taskId)) s.delete(taskId)
-  else s.add(taskId)
+  else {
+    s.add(taskId)
+    if (typeof task === 'object') ensureModel(task) // 展开即初始化可编辑模型
+  }
   expandedCards.value = s
 }
 
@@ -71,8 +112,18 @@ async function handlePromoteProcedure(task) {
     const procedureId = res.data
     task.promotedProcedure = 'PROMOTED'
     task.procedureName = task.procedureName || `规程#${procedureId}`
-    ElMessage.success(`已沉淀为标准规程（ID: ${procedureId}）`)
     refreshStats()
+    // 沉淀后是 DRAFT 草稿，复用「标准规程管理」编辑后发布
+    try {
+      await ElMessageBox.confirm(
+        `已生成草稿规程（ID: ${procedureId}）。是否前往「标准规程管理」查看并编辑后发布？`,
+        '沉淀成功',
+        { confirmButtonText: '去编辑', cancelButtonText: '稍后', type: 'success' }
+      )
+      router.push({ name: 'AdminProcedures', query: { edit: procedureId } })
+    } catch {
+      /* 用户选择稍后，留在当前页 */
+    }
   } catch (e) {
     ElMessage.error('沉淀规程失败：' + (e.message || ''))
   } finally {
@@ -81,9 +132,30 @@ async function handlePromoteProcedure(task) {
 }
 
 async function handlePromoteGraph(task) {
+  const model = ensureModel(task)
+  // 组装管理员编辑后的 graphData（按 name 关联，与后端 promoteToGraph 契约一致）
+  const graphData = {
+    deviceName: (model.deviceName || task.deviceName || '').trim(),
+    components: model.components.filter((c) => c.name && c.name.trim())
+      .map((c) => ({ name: c.name.trim(), specification: (c.specification || '').trim() })),
+    faults: model.faults.filter((f) => f.name && f.name.trim())
+      .map((f) => ({ name: f.name.trim(), severity: f.severity || '一般', relatedComponent: (f.relatedComponent || '').trim() })),
+    solutions: model.solutions.filter((s) => s.title && s.title.trim())
+      .map((s) => ({ title: s.title.trim(), summary: (s.summary || '').trim(), relatedFault: (s.relatedFault || '').trim() })),
+  }
+  if (model.procedureId != null) graphData.procedureId = model.procedureId
+
+  if (!graphData.deviceName) {
+    ElMessage.warning('请填写设备名称')
+    return
+  }
+  if (!graphData.components.length && !graphData.faults.length && !graphData.solutions.length) {
+    ElMessage.warning('请至少保留一个部件 / 故障 / 方案')
+    return
+  }
+
   busyCards.value.add(task.id)
   try {
-    const graphData = task.graphExtraction || {}
     await promoteToGraph(task.id, graphData)
     task.promotedGraph = 'PROMOTED'
     ElMessage.success('已沉淀到知识图谱')
@@ -305,7 +377,7 @@ watch(
           }"
         >
           <!-- 卡片头部 -->
-          <div class="card-header" @click="toggleExpand(task.id)">
+          <div class="card-header" @click="toggleExpand(task)">
             <div class="card-header-left">
               <span class="task-num">{{ task.taskNumber }}</span>
               <span
@@ -371,20 +443,78 @@ watch(
             </div>
           </div>
 
-          <!-- AI 提取线索（可展开） -->
+          <!-- AI 提取线索（可展开 + 可编辑） -->
           <transition name="expand">
-            <div v-if="isExpanded(task.id)" class="card-extraction">
+            <div v-if="isExpanded(task.id) && editModels[task.id]" class="card-extraction">
               <div class="ext-head">
                 <span class="ext-led" />
-                <span class="ext-title">AI 提取的图谱线索</span>
+                <span class="ext-title">图谱线索（可编辑）</span>
                 <span class="ext-summary" v-if="extractionSummary(task.graphExtraction)">
-                  {{ extractionSummary(task.graphExtraction) }}
+                  AI 原始：{{ extractionSummary(task.graphExtraction) }}
                 </span>
               </div>
-              <div class="ext-body">
-                <pre class="ext-json">{{ JSON.stringify(formatGraphExtraction(task.graphExtraction), null, 2) }}</pre>
+
+              <div class="ext-edit">
+                <!-- 设备 -->
+                <div class="ee-row">
+                  <label class="ee-label">设备名称</label>
+                  <el-input v-model="editModels[task.id].deviceName" size="small" placeholder="设备名称（必填）" />
+                </div>
+
+                <!-- 部件 -->
+                <div class="ee-section">
+                  <div class="ee-sec-head">
+                    <span class="ee-sec-title">部件 Components</span>
+                    <button class="ee-add" @click.stop="addComponent(task)"><el-icon><Plus /></el-icon>添加部件</button>
+                  </div>
+                  <div v-for="(c, i) in editModels[task.id].components" :key="'c'+i" class="ee-item">
+                    <el-input v-model="c.name" size="small" placeholder="部件名称" class="ee-grow" />
+                    <el-input v-model="c.specification" size="small" placeholder="规格（可选）" class="ee-grow" />
+                    <button class="ee-del" @click.stop="removeComponent(task, i)"><el-icon><Delete /></el-icon></button>
+                  </div>
+                  <p v-if="!editModels[task.id].components.length" class="ee-empty">暂无部件</p>
+                </div>
+
+                <!-- 故障 -->
+                <div class="ee-section">
+                  <div class="ee-sec-head">
+                    <span class="ee-sec-title">故障 Faults</span>
+                    <button class="ee-add" @click.stop="addFault(task)"><el-icon><Plus /></el-icon>添加故障</button>
+                  </div>
+                  <div v-for="(f, i) in editModels[task.id].faults" :key="'f'+i" class="ee-item">
+                    <el-input v-model="f.name" size="small" placeholder="故障名称" class="ee-grow" />
+                    <el-select v-model="f.severity" size="small" placeholder="严重度" style="width:92px" filterable allow-create>
+                      <el-option v-for="s in SEVERITY_OPTIONS" :key="s" :label="s" :value="s" />
+                    </el-select>
+                    <el-select v-model="f.relatedComponent" size="small" placeholder="关联部件" style="width:130px" clearable filterable>
+                      <el-option v-for="n in componentNames(task)" :key="n" :label="n" :value="n" />
+                    </el-select>
+                    <button class="ee-del" @click.stop="removeFault(task, i)"><el-icon><Delete /></el-icon></button>
+                  </div>
+                  <p v-if="!editModels[task.id].faults.length" class="ee-empty">暂无故障</p>
+                </div>
+
+                <!-- 方案 -->
+                <div class="ee-section">
+                  <div class="ee-sec-head">
+                    <span class="ee-sec-title">方案 Solutions</span>
+                    <button class="ee-add" @click.stop="addSolution(task)"><el-icon><Plus /></el-icon>添加方案</button>
+                  </div>
+                  <div v-for="(s, i) in editModels[task.id].solutions" :key="'s'+i" class="ee-item ee-item-col">
+                    <div class="ee-item">
+                      <el-input v-model="s.title" size="small" placeholder="方案标题" class="ee-grow" />
+                      <el-select v-model="s.relatedFault" size="small" placeholder="关联故障" style="width:130px" clearable filterable>
+                        <el-option v-for="n in faultNames(task)" :key="n" :label="n" :value="n" />
+                      </el-select>
+                      <button class="ee-del" @click.stop="removeSolution(task, i)"><el-icon><Delete /></el-icon></button>
+                    </div>
+                    <el-input v-model="s.summary" size="small" type="textarea" :rows="2" placeholder="方案摘要（可选）" />
+                  </div>
+                  <p v-if="!editModels[task.id].solutions.length" class="ee-empty">暂无方案</p>
+                </div>
               </div>
-              <p class="ext-hint">管理员可审查以上线索，确认无误后点击「沉淀到图谱」将其写入知识图谱。</p>
+
+              <p class="ext-hint">可在上方直接增删改 AI 提取的线索，确认后点击「沉淀到图谱」将<b>编辑后的内容</b>写入知识图谱。</p>
             </div>
           </transition>
 
@@ -834,6 +964,100 @@ watch(
   color: var(--drp-mut);
   border-top: 1px solid #eef1f6;
   background: #fff;
+}
+
+/* 可编辑表单 */
+.ext-edit {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ee-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ee-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--drp-mut);
+  min-width: 64px;
+}
+.ee-section {
+  border: 1px solid #eef1f6;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.ee-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ee-sec-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--plaza-heading);
+  letter-spacing: 0.3px;
+}
+.ee-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--plaza-accent);
+  background: var(--plaza-info-soft);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ee-add:hover {
+  border-color: var(--plaza-accent);
+}
+.ee-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ee-item:last-child { margin-bottom: 0; }
+.ee-item-col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px;
+  border: 1px dashed #e2e8f0;
+  border-radius: 8px;
+}
+.ee-grow { flex: 1; min-width: 0; }
+.ee-del {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1px solid var(--drp-line);
+  background: #fff;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ee-del:hover {
+  border-color: var(--plaza-danger);
+  color: var(--plaza-danger);
+  background: var(--plaza-danger-soft);
+}
+.ee-empty {
+  font-size: 12px;
+  color: #b8c0cc;
+  margin: 2px 0 0;
 }
 
 /* 展开过渡 */
