@@ -1,1 +1,0 @@
-import{A as t}from"./AIChat-CpFbc9Eu.js";import{g as a,o}from"./index-klxYudak.js";import"./user-I3YU0NAd.js";import"./request-cIf3tl_m.js";const s={name:"AdminAIChat"},p=Object.assign(s,{setup(e){return(r,n)=>(o(),a(t,{"storage-key":"admin-ai-sessions"}))}});export{p as default};

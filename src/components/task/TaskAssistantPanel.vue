@@ -208,6 +208,10 @@ defineExpose({ focusInput })
 }
 .a-body {
   flex: 1;
+  /* 关键：flex 子项默认 min-height:auto，会被内容撑高而不收缩，
+     导致 overflow-y 失效、长回答溢出被 .assistant 的 overflow:hidden 裁掉。
+     置 0 后才能在父容器固定高度内真正滚动。 */
+  min-height: 0;
   overflow-y: auto;
   padding: 14px;
   display: flex;
