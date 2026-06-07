@@ -58,3 +58,22 @@ export function stepChatStream(taskId, stepId, message, images = [], signal) {
     body: JSON.stringify({ message, images }),
   })
 }
+
+/**
+ * 检修步骤助手（任务级一条会话，SSE 流式）。
+ * 后端自动注入：当前聚焦步骤+证据、全步总览+进度、工人偏好、近 N 轮历史。
+ * @returns {Promise<Response>}
+ */
+export function taskChatStream(taskId, { message, images = [], focusedStepId = null } = {}, signal) {
+  return fetch(`/api/weixiu/task/${taskId}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: JSON.stringify({ message, images, focusedStepId }),
+  })
+}
+
+/** 任务对话历史（进面板时渲染，时间正序） */
+export function getTaskChatHistory(taskId) {
+  return request({ url: `${BASE}/${taskId}/chat/history`, method: 'GET' })
+}

@@ -12,6 +12,8 @@ import {
   Search,
   ChatDotRound,
   Share,
+  List,
+  Collection,
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -48,6 +50,8 @@ const menuItems = [
   { path: '/admin/users', name: '用户管理', icon: User },
   { path: '/admin/knowledge', name: '知识库管理', icon: Document },
   { path: '/admin/graph', name: '知识图谱', icon: Share },
+  { path: '/admin/tasks', name: '任务管理', icon: List },
+  { path: '/admin/procedures', name: '标准规程', icon: Collection },
   { path: '/admin/ai-chat', name: 'AI 对话', icon: ChatDotRound },
   { path: '/admin/settings', name: '系统设置', icon: Setting },
 ]

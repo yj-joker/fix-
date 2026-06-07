@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Upload, Document, Plus, Check, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { uploadMaintenanceManual } from '@/api/maintenanceManual'
+import { searchDevices } from '@/api/graph'
 import { notifyStore } from '@/stores/notifyStore'
 
 const emit = defineEmits(['success'])
@@ -11,6 +12,23 @@ const fileInput = ref(null)
 const dragOver = ref(false)
 const uploadLoading = ref(false)
 const uploadedFiles = ref([])
+
+// 适用设备（本批次共用，应用到所有上传的文件）
+const deviceOptions = ref([])
+const selectedDeviceIds = ref([])
+
+async function loadDevices() {
+  try {
+    const res = await searchDevices('', 50)
+    if (res.code === '200' || res.code === 200) {
+      deviceOptions.value = res.data || []
+    }
+  } catch (e) {
+    console.warn('设备列表加载失败', e.message)
+  }
+}
+
+onMounted(loadDevices)
 
 function handleDragOver(e) {
   dragOver.value = true
@@ -81,6 +99,8 @@ async function uploadFiles() {
     formData.append('manualName', nameWithoutExt)
     formData.append('manualImage', '')
     formData.append('manualDesc', '')
+    // 适用设备：每个 deviceId 作为重复表单字段，后端 @ModelAttribute 绑定为 List<String>
+    selectedDeviceIds.value.forEach(id => formData.append('deviceIds', id))
 
     try {
       const res = await uploadMaintenanceManual(formData)
@@ -111,6 +131,7 @@ async function uploadFiles() {
 
 function resetState() {
   uploadedFiles.value = []
+  selectedDeviceIds.value = []
 }
 
 function formatSize(bytes) {
@@ -128,6 +149,29 @@ defineExpose({ uploadFiles, resetState })
 
 <template>
   <div class="manual-upload">
+    <!-- 适用设备（可选，本批次共用） -->
+    <div class="device-field">
+      <label class="device-label">
+        适用设备 <span class="optional">(可选，本批次全部文件共用；通用手册可不选)</span>
+      </label>
+      <el-select
+        v-model="selectedDeviceIds"
+        multiple
+        filterable
+        collapse-tags
+        collapse-tags-tooltip
+        placeholder="选择该手册适用的设备"
+        style="width: 100%"
+      >
+        <el-option
+          v-for="d in deviceOptions"
+          :key="d.id"
+          :label="d.name + (d.model ? ' / ' + d.model : '')"
+          :value="d.id"
+        />
+      </el-select>
+    </div>
+
     <!-- 拖拽区域 -->
     <div
       class="drop-zone"
@@ -199,6 +243,21 @@ defineExpose({ uploadFiles, resetState })
 <style scoped>
 .manual-upload {
   width: 100%;
+}
+
+.device-field {
+  margin-bottom: 16px;
+}
+.device-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--plaza-text);
+  margin-bottom: 8px;
+}
+.device-label .optional {
+  font-weight: 400;
+  color: var(--plaza-text-muted);
 }
 
 .drop-zone {

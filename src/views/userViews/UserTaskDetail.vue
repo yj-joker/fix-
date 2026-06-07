@@ -4,9 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getTaskDetail, startTask, retryGenerate } from '@/api/maintenanceTask'
 import { notifyStore } from '@/stores/notifyStore'
+import { taskAssistantStore } from '@/stores/taskAssistantStore'
 import { taskStatus, urgency, levelLabel, stepActionable } from '@/constants/taskStatus'
 import TaskStepCard from '@/components/task/TaskStepCard.vue'
-import StepChatDrawer from '@/components/task/StepChatDrawer.vue'
+import TaskAssistantPanel from '@/components/task/TaskAssistantPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,8 +16,7 @@ const taskId = route.params.id
 const task = ref(null)
 const loading = ref(false)
 const acting = ref(false)
-const chatOpen = ref(false)
-const chatStep = ref({})
+const panelRef = ref(null)
 
 const steps = computed(() => (task.value?.steps || []).slice().sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)))
 // 当前应执行的步骤 = 第一个「待执行 / 未通过」的步骤
@@ -25,6 +25,8 @@ const activeStepId = computed(() => {
   return s ? s.id : null
 })
 const st = computed(() => taskStatus(task.value?.status))
+// 有步骤可看（可用助手）的状态
+const showWork = computed(() => ['EXECUTING', 'CLOSED'].includes(task.value?.status))
 
 async function load() {
   loading.value = true
@@ -53,7 +55,11 @@ async function onRetry() {
   finally { acting.value = false }
 }
 
-function openChat(step) { chatStep.value = step; chatOpen.value = true }
+// 点步骤卡「答疑」→ 助手聚焦到该步并聚焦输入框（同一条对话，不再弹抽屉）
+function onChat(step) {
+  taskAssistantStore.setFocus(taskId, step.id)
+  panelRef.value?.focusInput?.()
+}
 
 // 收到 WS 通知（步骤验证 / 生成完成）后刷新
 watch(() => notifyStore.state.notifications.length, () => load())
@@ -62,7 +68,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="detail" v-loading="loading">
+  <div class="detail" :class="{ wide: showWork }" v-loading="loading">
     <button class="back" @click="router.push('/user/tasks')">‹ 返回任务列表</button>
 
     <template v-if="task">
@@ -106,23 +112,29 @@ onMounted(load)
         <button class="act ok" :disabled="acting" @click="onStart">开始执行</button>
       </div>
 
-      <!-- 执行中 / 已完成：步骤列表 -->
+      <!-- 执行中 / 已完成：步骤列表 + 常驻助手 -->
       <template v-else>
         <div v-if="task.status === 'CLOSED'" class="state-box done">✓ 该检修任务已全部完成</div>
-        <div class="steps">
-          <TaskStepCard v-for="s in steps" :key="s.id" :step="s" :task-id="taskId"
-                        :executing="task.status === 'EXECUTING'" :active="s.id === activeStepId"
-                        @submitted="load" @chat="openChat" />
+        <div class="work">
+          <div class="col-steps">
+            <div class="steps">
+              <TaskStepCard v-for="s in steps" :key="s.id" :step="s" :task-id="taskId"
+                            :executing="task.status === 'EXECUTING'" :active="s.id === activeStepId"
+                            @submitted="load" @chat="onChat" />
+            </div>
+          </div>
+          <aside class="col-assistant">
+            <TaskAssistantPanel ref="panelRef" :task-id="taskId" :steps="steps" :active-step-id="activeStepId" />
+          </aside>
         </div>
       </template>
     </template>
-
-    <StepChatDrawer v-model="chatOpen" :task-id="taskId" :step="chatStep" />
   </div>
 </template>
 
 <style scoped>
 .detail { max-width: 860px; margin: 0 auto; min-height: 300px; }
+.detail.wide { max-width: 1240px; }
 .back { background: none; border: none; color: #3b82f6; font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 14px; }
 .back:hover { text-decoration: underline; }
 .t-head { background: #fff; border: 1px solid #e6eaf1; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 12px rgba(51,65,85,.05); }
@@ -146,5 +158,15 @@ onMounted(load)
 .act.ok { background: #3b82f6; color: #fff; border-color: #3b82f6; }
 .act.ok:hover { background: #2563eb; }
 .act:disabled { opacity: .6; cursor: not-allowed; }
-.steps { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+
+/* 两栏：步骤 + 常驻助手 */
+.work { display: flex; gap: 16px; align-items: flex-start; margin-top: 16px; }
+.col-steps { flex: 1; min-width: 0; }
+.steps { display: flex; flex-direction: column; gap: 14px; }
+.col-assistant { width: 384px; flex-shrink: 0; position: sticky; top: 8px; height: calc(100vh - 120px); }
+
+@media (max-width: 980px) {
+  .work { flex-direction: column; }
+  .col-assistant { width: 100%; position: static; height: 520px; }
+}
 </style>

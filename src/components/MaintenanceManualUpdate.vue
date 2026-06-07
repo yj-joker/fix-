@@ -1,8 +1,9 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Upload, Document, Plus, Check, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { updateMaintenanceManual } from '@/api/maintenanceManual'
+import { updateMaintenanceManual, getMaintenanceManualDetail } from '@/api/maintenanceManual'
+import { searchDevices } from '@/api/graph'
 
 const props = defineProps({
   visible: Boolean,
@@ -20,12 +21,43 @@ const manualNameInput = ref('')
 const manualImageInput = ref('')
 const manualDescInput = ref('')
 
+// 适用设备
+const deviceOptions = ref([])
+const selectedDeviceIds = ref([])
+
+async function loadDevices() {
+  try {
+    const res = await searchDevices('', 50)
+    if (res.code === '200' || res.code === 200) {
+      deviceOptions.value = res.data || []
+    }
+  } catch (e) {
+    console.warn('设备列表加载失败', e.message)
+  }
+}
+onMounted(loadDevices)
+
+// 拉取手册详情以回填当前已关联设备（列表接口不含 devices）
+async function loadLinkedDevices(id) {
+  selectedDeviceIds.value = []
+  if (!id) return
+  try {
+    const res = await getMaintenanceManualDetail(id)
+    if (res.code === '200' || res.code === 200) {
+      selectedDeviceIds.value = (res.data?.devices || []).map(d => d.deviceId).filter(Boolean)
+    }
+  } catch (e) {
+    console.warn('已关联设备加载失败', e.message)
+  }
+}
+
 watch(() => props.manual, (val) => {
   if (val) {
     manualNameInput.value = val.manualName || ''
     manualImageInput.value = val.manualImage || ''
     manualDescInput.value = val.manualDesc || ''
     selectedFile.value = null
+    loadLinkedDevices(val.id)
   }
 }, { immediate: true })
 
@@ -35,6 +67,7 @@ watch(() => props.visible, (val) => {
     manualImageInput.value = props.manual.manualImage || ''
     manualDescInput.value = props.manual.manualDesc || ''
     selectedFile.value = null
+    loadLinkedDevices(props.manual.id)
   }
 })
 
@@ -109,6 +142,13 @@ async function handleUpdate() {
   formData.append('manualName', manualNameInput.value.trim())
   formData.append('manualImage', manualImageInput.value.trim())
   formData.append('manualDesc', manualDescInput.value.trim())
+  // 适用设备：编辑场景总是表达完整意图。非空则逐个追加；为空时追加一个空串作为
+  // “已携带但清空”的信号（后端按空白过滤后即清空全部关联），以区别于“未携带=不改动”。
+  if (selectedDeviceIds.value.length > 0) {
+    selectedDeviceIds.value.forEach(id => formData.append('deviceIds', id))
+  } else {
+    formData.append('deviceIds', '')
+  }
   if (selectedFile.value) {
     formData.append('file', selectedFile.value.file)
   }
@@ -185,6 +225,27 @@ function handleClose() {
           placeholder="请输入手册简介"
           clearable
         />
+      </div>
+
+      <!-- 适用设备 -->
+      <div class="form-item">
+        <label class="form-label">适用设备 <span class="optional">(可选，通用手册可清空)</span></label>
+        <el-select
+          v-model="selectedDeviceIds"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="选择该手册适用的设备"
+          style="width: 100%"
+        >
+          <el-option
+            v-for="d in deviceOptions"
+            :key="d.id"
+            :label="d.name + (d.model ? ' / ' + d.model : '')"
+            :value="d.id"
+          />
+        </el-select>
       </div>
 
       <!-- 文件选择 -->

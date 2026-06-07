@@ -86,6 +86,16 @@ const routes = [
         path: 'notify',
         name: 'AdminNotify',
         component: () => import('../views/adminViews/AdminNotify.vue')
+      },
+      {
+        path: 'tasks',
+        name: 'AdminTasks',
+        component: () => import('../views/adminViews/AdminTasks.vue')
+      },
+      {
+        path: 'procedures',
+        name: 'AdminProcedures',
+        component: () => import('../views/adminViews/AdminProcedures.vue')
       }
     ]
   },
