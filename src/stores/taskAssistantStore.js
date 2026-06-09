@@ -59,7 +59,7 @@ export const taskAssistantStore = {
 
   async send(taskId, { message, images = [] }) {
     const state = ensure(taskId)
-    const text = (message || '').trim()
+    const text = (message || '').trim() || (images.length ? '请分析我上传的图片。' : '')
     if (state.streaming || !text) return
 
     state.messages.push({ role: 'user', content: text, images, evidenceImages: [] })

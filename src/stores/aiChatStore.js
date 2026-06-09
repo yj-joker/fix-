@@ -73,11 +73,24 @@ function touchSession(state, session) {
   persist(state)
 }
 
-function normalizeImages(files) {
-  return (files || [])
-    .filter((file) => file.type === 'image' && file.status !== 'error')
-    .map((file) => file.url)
-    .filter((url) => url && !url.startsWith('blob:') && !url.startsWith('data:'))
+async function normalizeImages(files) {
+  const images = await Promise.all(
+    (files || [])
+      .filter((file) => file.type === 'image' && file.status !== 'error')
+      .map(async (file) => {
+        try {
+          if (file.uploadPromise && file.status === 'uploading') {
+            await file.uploadPromise
+          }
+          return file.url
+        } catch {
+          return ''
+        }
+      }),
+  )
+
+  return images
+    .filter((url) => typeof url === 'string' && url && !url.startsWith('blob:') && !url.startsWith('data:'))
 }
 
 export const aiChatStore = {
@@ -133,11 +146,11 @@ export const aiChatStore = {
   async send(storageKey, { text, files = [], thinking = false }) {
     const state = ensure(storageKey)
     const session = currentSession(state)
-    const content = (text || '').trim()
-    if (!session || state.streaming || (!content && !files.length)) return
+    const trimmedText = (text || '').trim()
+    if (!session || state.streaming || (!trimmedText && !files.length)) return
+    const content = trimmedText || '请分析我上传的图片。'
 
     const visibleImages = (files || []).filter((file) => file.type === 'image').map((file) => file.url).filter(Boolean)
-    const requestImages = normalizeImages(files)
     session.messages.push({
       id: `${Date.now()}-user`,
       role: 'user',
@@ -189,6 +202,11 @@ export const aiChatStore = {
     })
 
     try {
+      const requestImages = await normalizeImages(files)
+      if (!trimmedText && !requestImages.length) {
+        throw new Error('图片上传失败，无法发送给 AI')
+      }
+
       const response = await aiChatStream({
         sessionId: session.backendSessionId || session.id,
         message: content,

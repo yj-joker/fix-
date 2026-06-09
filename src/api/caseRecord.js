@@ -17,13 +17,3 @@ export const rejectCase = (id, comment) =>
 
 export const getMyCases = (page = 1, size = 10) =>
   request({ url: '/weixiu/case-record/mine', method: 'GET', params: { page, size } })
-
-// Legacy wrappers kept for older admin/business pages.
-export const saveCaseRecord = (caseRecordDTO) =>
-  request({ url: '/weixiu/case-record/save', method: 'POST', data: caseRecordDTO })
-
-export const updateCaseRecord = (caseRecordDTO) =>
-  request({ url: '/weixiu/case-record/update', method: 'PUT', data: caseRecordDTO })
-
-export const deleteCaseRecord = (id) =>
-  request({ url: `/weixiu/case-record/${id}`, method: 'DELETE' })

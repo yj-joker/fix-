@@ -1,10 +1,10 @@
 <script setup>
 import { ref, reactive, shallowRef, onMounted, onBeforeUnmount, computed } from 'vue'
 import { Graph } from '@antv/g6'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import {
   searchDevices, getDeviceComponents, getComponentFaults, getFaultSolutions, getFaultCases,
-  searchDiagnosisPaths, listUnverified, approveSolution, rejectNode,
+  searchDiagnosisPaths,
 } from '../api/graph'
 
 const props = defineProps({
@@ -33,7 +33,6 @@ const expanded = new Set()  // 已展开的节点 key
 const ui = reactive({
   deviceKw: '', diagKw: '', loading: false,
   selected: null, showDetail: false, busyNode: '',
-  showUnverified: false,
 })
 const stats = reactive({ nodes: 0, edges: 0 })
 
@@ -44,9 +43,8 @@ function nodeStyle() {
   return {
     size: (d) => d.data.size,
     fill: (d) => d.data.fill,
-    stroke: (d) => d.data.unverified ? '#f59e0b' : d.data.stroke,
-    lineWidth: (d) => d.data.unverified ? 2.4 : 1.6,
-    lineDash: (d) => d.data.unverified ? [5, 4] : 0,
+    stroke: (d) => d.data.stroke,
+    lineWidth: 1.6,
     shadowColor: 'rgba(51,65,85,0.16)',
     shadowBlur: 8,
     shadowOffsetY: 2,
@@ -134,13 +132,10 @@ function syncGraph(refit = false) {
   }, 30)
 }
 
-function addNode(type, id, label, raw = {}, extra = {}) {
+function addNode(type, id, label, raw = {}) {
   if (!id) return null
   const k = key(type, id)
-  if (nodeMap.has(k)) {
-    if (extra.unverified) nodeMap.get(k).data.unverified = true
-    return k
-  }
+  if (nodeMap.has(k)) return k
   const conf = TYPE[type]
   const stroke = type === 'fault' && SEVERITY[raw.severity] ? SEVERITY[raw.severity] : conf.stroke
   nodeMap.set(k, {
@@ -149,7 +144,7 @@ function addNode(type, id, label, raw = {}, extra = {}) {
       type, rawId: id, label: (label || conf.label).slice(0, 16),
       fullLabel: label || conf.label,
       fill: conf.fill, stroke, size: conf.size,
-      unverified: !!extra.unverified, raw,
+      raw,
     },
   })
   return k
@@ -187,7 +182,7 @@ async function expandNode(n) {
     } else if (type === 'fault') {
       const solutions = rows(await getFaultSolutions(rawId))
       solutions.forEach((s) => {
-        const sk = addNode('solution', s.id, s.title, s, { unverified: s.verified === false })
+        const sk = addNode('solution', s.id, s.title, s)
         addEdge(k, sk, 'HAS_SOLUTION')
       })
       const cases = rows(await getFaultCases(rawId))
@@ -243,7 +238,7 @@ async function onDiagnose() {
         if (prev) addEdge(prev, fk, 'CAUSES')
       }
       ;(r.solutions || []).forEach((s) => {
-        const sk = addNode('solution', s.id, s.title, { title: s.title, estimatedTime: s.estimatedTime, verified: s.verified }, { unverified: s.verified === false })
+        const sk = addNode('solution', s.id, s.title, { title: s.title, estimatedTime: s.estimatedTime, verified: s.verified })
         if (fk) addEdge(fk, sk, 'HAS_SOLUTION')
       })
     })
@@ -254,61 +249,12 @@ async function onDiagnose() {
   } finally { ui.loading = false }
 }
 
-async function onLoadUnverified() {
-  ui.loading = true
-  try {
-    const list = rows(await listUnverified(80))
-    if (!list.length) { ElMessage.info('暂无未验证方案'); return }
-    list.forEach((it) => {
-      const sk = addNode('solution', it.id, it.title, { title: it.title, description: it.description, verified: false, sourceManualIds: it.sourceManualIds }, { unverified: true })
-      if (it.faultName) {
-        const fk = addNode('fault', 'uv-' + it.faultName, it.faultName, { name: it.faultName }, {})
-        addEdge(fk, sk, 'HAS_SOLUTION')
-      }
-    })
-    ui.showUnverified = true
-    syncGraph(true)
-    ElMessage.success(`加载 ${list.length} 个未验证方案`)
-  } catch (err) {
-    ElMessage.error('加载失败：' + (err.message || ''))
-  } finally { ui.loading = false }
-}
-
 function fitView() { graph.value?.fitView() }
 function relayout() { graph.value?.layout() }
 function clearAll() {
   nodeMap.clear(); edgeSet.clear(); expanded.clear()
-  ui.selected = null; ui.showDetail = false; ui.showUnverified = false
+  ui.selected = null; ui.showDetail = false
   syncGraph()
-}
-
-/* ---------- 审核（admin only） ---------- */
-async function doApprove() {
-  const d = ui.selected; if (!d) return
-  ui.busyNode = d.id || 'approve'
-  try {
-    await approveSolution(d.rawId)
-    d.unverified = false
-    const n = nodeMap.get(key('solution', d.rawId)); if (n) n.data.unverified = false
-    syncGraph()
-    ElMessage.success('已通过，升级为已验证方案')
-  } catch (err) { ElMessage.error('通过失败：' + (err.message || '')) }
-  finally { ui.busyNode = '' }
-}
-async function doReject() {
-  const d = ui.selected; if (!d) return
-  try {
-    await ElMessageBox.confirm(`确认拒绝并删除方案「${d.fullLabel}」？此操作不可撤销。`, '审核拒绝', { type: 'warning' })
-  } catch { return }
-  try {
-    await rejectNode('Solution', d.rawId)
-    const k = key('solution', d.rawId)
-    nodeMap.delete(k); expanded.delete(k)
-    for (const e of [...edgeSet]) if (e.includes(k)) edgeSet.delete(e)
-    ui.showDetail = false; ui.selected = null
-    syncGraph()
-    ElMessage.success('已拒绝并移除')
-  } catch (err) { ElMessage.error('拒绝失败：' + (err.message || '')) }
 }
 
 const detailRows = computed(() => {
@@ -334,7 +280,7 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
     <header class="kg-head">
       <div class="kg-title">
         <span class="led" /><span class="t-main">知识图谱</span><span class="t-sub">KNOWLEDGE&nbsp;GRAPH</span>
-        <span class="t-mode" :class="readonly ? 'm-ro' : 'm-rw'">{{ readonly ? '只读浏览' : '管理 · 可审核' }}</span>
+        <span class="t-mode" :class="readonly ? 'm-ro' : 'm-rw'">{{ readonly ? '只读浏览' : '管理浏览' }}</span>
       </div>
       <div class="kg-readout">
         <span>节点 <b>{{ stats.nodes }}</b></span><i />
@@ -359,11 +305,6 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
           <button class="hud-btn b-amber" :disabled="ui.loading" @click="onDiagnose">语义召回 ▸</button>
         </div>
 
-        <div class="panel" v-if="!readonly">
-          <div class="panel-h">审核队列</div>
-          <button class="hud-btn b-warn" :disabled="ui.loading" @click="onLoadUnverified">加载未验证方案 ⚠</button>
-        </div>
-
         <div class="panel ops">
           <button class="mini" @click="fitView">适配</button>
           <button class="mini" @click="relayout">重排</button>
@@ -375,7 +316,6 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
           <div v-for="(v,k) in TYPE" :key="k" class="lg-row">
             <span class="dot" :style="{ background: v.fill, borderColor: v.stroke }" />{{ v.label }}
           </div>
-          <div class="lg-row"><span class="dot dot-uv" />未验证（待审核）</div>
         </div>
       </aside>
 
@@ -399,8 +339,6 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
             <button class="d-close" @click="ui.showDetail=false">✕</button>
           </div>
           <h3 class="d-name">{{ ui.selected.fullLabel }}</h3>
-          <span v-if="ui.selected.unverified" class="badge-uv">⚠ 未验证 · 手册自动抽取</span>
-
           <dl class="d-attrs">
             <template v-for="(row,i) in detailRows" :key="i">
               <dt>{{ row[0] }}</dt><dd>{{ row[1] }}</dd>
@@ -412,10 +350,6 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
             <img v-for="(u,i) in ui.selected.raw.imageUrls" :key="i" :src="u" alt="" />
           </div>
 
-          <div v-if="!readonly && ui.selected.type==='solution' && ui.selected.unverified" class="d-actions">
-            <button class="act ok" :disabled="!!ui.busyNode" @click="doApprove">✓ 审核通过</button>
-            <button class="act no" @click="doReject">✕ 拒绝删除</button>
-          </div>
           <p v-if="!['solution','case'].includes(ui.selected.type)" class="d-hint">点击节点可展开下一层关联 ▸</p>
         </aside>
       </transition>

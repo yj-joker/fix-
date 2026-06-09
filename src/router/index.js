@@ -73,11 +73,6 @@ const routes = [
         component: () => import('../views/adminViews/AdminAIChat.vue')
       },
       {
-        path: 'business',
-        name: 'AdminBusiness',
-        component: () => import('../views/adminViews/BusinessManage.vue')
-      },
-      {
         path: 'settings',
         name: 'AdminSettings',
         redirect: { path: '/admin/system', query: { tab: 'users' } }
@@ -136,6 +131,11 @@ const routes = [
         component: () => import('../views/userViews/UserAIChat.vue')
       },
       {
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('../views/userViews/UserProfile.vue')
+      },
+      {
         path: 'search-result',
         name: 'UserSearchResult',
         component: () => import('../views/userViews/UserSearchResult.vue')
@@ -162,13 +162,36 @@ const router = createRouter({
 // 全局登录守卫：/admin 与 /user 下的页面需登录，未登录直接跳登录页，
 // 从根上避免「未登录就挂载布局 → 触发 WebSocket 握手鉴权失败」。
 router.beforeEach((to, from, next) => {
-  const isAuthed = !!localStorage.getItem('userInfo')
+  const rawUserInfo = localStorage.getItem('userInfo')
+  const isAuthed = !!rawUserInfo
   const needsAuth = to.path.startsWith('/admin') || to.path.startsWith('/user')
   if (needsAuth && !isAuthed) {
     next({ path: '/login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return
   }
+
+  if (needsAuth) {
+    let userType = null
+    try {
+      userType = Number(JSON.parse(rawUserInfo || '{}').type)
+    } catch {
+      localStorage.removeItem('userInfo')
+      next({ path: '/login', query: { redirect: to.fullPath } })
+      return
+    }
+
+    if (to.path.startsWith('/admin') && userType !== 1) {
+      next('/user/dashboard')
+      return
+    }
+
+    if (to.path.startsWith('/user') && userType === 1) {
+      next('/admin/dashboard')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

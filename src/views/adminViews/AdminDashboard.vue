@@ -1,6 +1,16 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { ArrowRight, Check, User, Document, Warning } from '@element-plus/icons-vue'
+import {
+  ArrowRight,
+  Check,
+  User,
+  Document,
+  Warning,
+  List,
+  Collection,
+  ChatDotRound,
+  Setting,
+} from '@element-plus/icons-vue'
 
 const stats = [
   { label: '用户总数', value: '128', icon: User, color: '#F97316' },
@@ -17,9 +27,34 @@ const recentActivities = [
 ]
 
 const quickActions = [
-  { title: '用户管理', desc: '查看并管理系统用户', path: '/admin/users' },
-  { title: '知识库审核', desc: '审核待发布的知识内容', path: '/admin/knowledge' },
-  { title: '系统设置', desc: '配置平台参数与选项', path: '/admin/settings' },
+  {
+    title: '任务管理',
+    desc: '查看检修任务、审核执行过程与沉淀案例',
+    path: '/admin/tasks',
+    icon: List,
+    tone: 'orange',
+  },
+  {
+    title: '知识中心',
+    desc: '维护知识条目、作业步骤和知识图谱',
+    path: '/admin/knowledge-center',
+    icon: Collection,
+    tone: 'green',
+  },
+  {
+    title: 'AI 助手',
+    desc: '进入管理端 AI 对话，辅助排障和内容整理',
+    path: '/admin/ai-chat',
+    icon: ChatDotRound,
+    tone: 'cyan',
+  },
+  {
+    title: '系统管理',
+    desc: '维护用户、通知、个人资料和平台配置',
+    path: '/admin/system',
+    icon: Setting,
+    tone: 'slate',
+  },
 ]
 
 // 检修分类点击量数据
@@ -217,6 +252,9 @@ const hoveredSlice = ref(null)
             :to="action.path"
             class="action-item"
           >
+            <div class="action-icon" :class="action.tone">
+              <el-icon><component :is="action.icon" /></el-icon>
+            </div>
             <div class="action-info">
               <span class="action-title">{{ action.title }}</span>
               <span class="action-desc">{{ action.desc }}</span>
@@ -354,20 +392,57 @@ const hoveredSlice = ref(null)
 .action-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 .action-item {
-  display: flex;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 24px;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--plaza-bg);
+  border: 1px solid transparent;
   border-radius: 10px;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .action-item:hover {
   background: var(--plaza-accent-soft);
+  border-color: var(--plaza-border-strong);
+  transform: translateY(-1px);
+}
+.action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: var(--plaza-bg-card);
+}
+.action-icon.orange {
+  color: var(--plaza-accent);
+  background: var(--plaza-accent-soft);
+}
+.action-icon.green {
+  color: var(--plaza-success);
+  background: var(--plaza-success-soft);
+}
+.action-icon.blue {
+  color: #2563eb;
+  background: #eff6ff;
+}
+.action-icon.cyan {
+  color: #0891b2;
+  background: #ecfeff;
+}
+.action-icon.slate {
+  color: #475569;
+  background: #f1f5f9;
+}
+.action-info {
+  min-width: 0;
 }
 .action-title {
   display: block;
@@ -380,14 +455,15 @@ const hoveredSlice = ref(null)
   display: block;
   font-size: 12px;
   color: var(--plaza-text-muted);
+  line-height: 1.4;
 }
 .action-arrow {
   color: var(--plaza-text-muted);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 .action-item:hover .action-arrow {
-  transform: translateX(4px);
   color: var(--plaza-accent);
+  transform: translateX(3px);
 }
 
 /* Pie Hero Card */

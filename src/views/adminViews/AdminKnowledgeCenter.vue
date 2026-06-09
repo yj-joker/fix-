@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AdminKnowledge from './AdminKnowledge.vue'
 import AdminKnowledgeGraph from './AdminKnowledgeGraph.vue'
 import AdminProcedures from './AdminProcedures.vue'
+import CaseReviewPanel from '@/components/case/CaseReviewPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +27,12 @@ const tabs = [
     label: '标准规程',
     desc: '沉淀检修任务，形成可复用的标准作业规程',
     component: AdminProcedures,
+  },
+  {
+    name: 'case-review',
+    label: '案例审核',
+    desc: '审核工人沉淀的检修案例，修正 AI 草稿后入库复用',
+    component: CaseReviewPanel,
   },
 ]
 

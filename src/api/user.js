@@ -95,10 +95,11 @@ export function deleteUsers(ids) {
 export function uploadImage(file) {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('bucket', 'PUBLIC')
   return request({
     url: '/weixiu/user/uploadByMinIO',
     method: 'POST',
-    data: formData
+    params: { bucket: 'PUBLIC' },
+    data: formData,
+    throwOnError: true
   })
 }

@@ -43,23 +43,6 @@ export function searchDiagnosisPaths(payload) {
 
 /** 单实体详情 */
 
-// ============ 审核（仅 admin 端调用） ============
-
-/** 未验证的自动抽取方案队列 */
-export function listUnverified(limit = 80) {
-  return request({ url: '/weixiu/graph/unverified', method: 'GET', params: { limit } })
-}
-
-/** 审核通过：方案 verified=true */
-export function approveSolution(solutionId) {
-  return request({ url: `/weixiu/graph/approve/${solutionId}`, method: 'POST', throwOnError: true })
-}
-
-/** 审核拒绝：删除该自动抽取节点 */
-export function rejectNode(label, nodeId) {
-  return request({ url: '/weixiu/graph/reject', method: 'DELETE', params: { label, nodeId }, throwOnError: true })
-}
-
 // ============ 图谱 CRUD（仅 admin 管理页调用） ============
 // 约定：save 返回 Result<实体>（含生成的 id）；update 用 PUT；删除用 DELETE /{id}
 

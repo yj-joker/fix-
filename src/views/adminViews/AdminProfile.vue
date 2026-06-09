@@ -153,8 +153,8 @@ const passwordRules = {
 }
 
 const getTypeText = (type) => {
-  const typeMap = { 0: '员工', 1: '管理员' }
-  return typeMap[type] ?? '未知'
+  const typeMap = { 0: '普通用户', 1: '管理员' }
+  return typeMap[Number(type)] ?? '未知'
 }
 
 const getGenderText = (gender) => {

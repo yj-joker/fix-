@@ -11,6 +11,7 @@ import {
 } from '@element-plus/icons-vue'
 import { uploadAudio } from '@/api/asr'
 import { uploadImage } from '@/api/user'
+import { extractUploadedImageUrl } from '@/utils/upload'
 
 const props = defineProps({
   generating: { type: Boolean, default: false },
@@ -31,15 +32,30 @@ let audioStream = null
 let audioChunks = []
 
 const hasUploading = computed(() => uploadedFiles.value.some((file) => file.status === 'uploading'))
+const hasActiveFile = computed(() => uploadedFiles.value.some((file) => file.status === 'success' || file.status === 'uploading'))
 const thinkingActive = computed(() => props.generating || isThinking.value)
 const canSend = computed(() => {
   return !props.generating
-    && !hasUploading.value
-    && (inputValue.value.trim().length > 0 || uploadedFiles.value.some((file) => file.status === 'success'))
+    && (inputValue.value.trim().length > 0 || hasActiveFile.value)
 })
 
 function pickImage() {
   imageInput.value?.click()
+}
+
+async function startImageUpload(item, file) {
+  try {
+    const res = await uploadImage(file)
+    const url = extractUploadedImageUrl(res)
+    if (!url) throw new Error('上传接口未返回图片地址')
+    item.url = url
+    item.status = 'success'
+    return item
+  } catch (error) {
+    item.status = 'error'
+    ElMessage.error(`图片上传失败：${error.message || '请稍后再试'}`)
+    return null
+  }
 }
 
 async function handleImageUpload(event) {
@@ -55,19 +71,10 @@ async function handleImageUpload(event) {
       type: 'image',
       url: URL.createObjectURL(file),
       status: 'uploading',
+      uploadPromise: null,
     }
+    item.uploadPromise = startImageUpload(item, file)
     uploadedFiles.value.push(item)
-
-    try {
-      const res = await uploadImage(file)
-      const url = res?.data || res?.url || res
-      if (!url) throw new Error('上传接口未返回图片地址')
-      item.url = url
-      item.status = 'success'
-    } catch (error) {
-      item.status = 'error'
-      ElMessage.error(`图片上传失败：${error.message || '请稍后再试'}`)
-    }
   }
 }
 
@@ -83,7 +90,7 @@ function handleSend() {
   if (!canSend.value) return
   emit('send', {
     text: inputValue.value,
-    files: uploadedFiles.value.filter((file) => file.status === 'success'),
+    files: uploadedFiles.value.filter((file) => file.status !== 'error'),
     thinking: true,
   })
   inputValue.value = ''
@@ -239,7 +246,7 @@ onUnmounted(() => {
       </div>
 
       <div class="composer-hint">
-        <span v-if="hasUploading">图片上传完成后即可发送</span>
+        <span v-if="hasUploading">点击发送后，图片上传会计入 AI 思考时间</span>
         <span v-else>Enter 发送，Shift + Enter 换行</span>
       </div>
     </div>

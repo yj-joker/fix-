@@ -38,7 +38,7 @@ const handleSubmit = async () => {
         localStorage.setItem('userInfo', JSON.stringify(userData))
         loading.value = false
         setTimeout(() => {
-          if (userData.type === 1) {
+          if (Number(userData.type) === 1) {
             router.push('/admin')
           } else {
             router.push('/user')

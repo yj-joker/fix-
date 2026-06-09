@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { uploadImage } from '@/api/user'
 import { taskAssistantStore } from '@/stores/taskAssistantStore'
+import { extractUploadedImageUrl } from '@/utils/upload'
 
 const props = defineProps({
   taskId: { required: true },
@@ -14,6 +15,7 @@ const s = computed(() => taskAssistantStore.get(props.taskId))
 const input = ref('')
 const pendingImages = ref([])
 const uploading = ref(false)
+const pendingSend = ref(false)
 const bodyRef = ref(null)
 const inputRef = ref(null)
 
@@ -66,13 +68,21 @@ async function onPickFiles(e) {
   try {
     for (const f of files) {
       const res = await uploadImage(f)
-      const url = res?.data || res?.url
+      const url = extractUploadedImageUrl(res)
       if (url) pendingImages.value.push(url)
     }
   } catch (err) {
     ElMessage.error('图片上传失败：' + (err.message || ''))
   } finally {
     uploading.value = false
+    if (pendingSend.value) {
+      pendingSend.value = false
+      if (input.value.trim() || pendingImages.value.length) {
+        await send()
+      } else {
+        ElMessage.error('图片上传失败，未发送给 AI')
+      }
+    }
   }
 }
 function removePending(i) {
@@ -81,7 +91,13 @@ function removePending(i) {
 
 async function send() {
   const text = input.value.trim()
-  if (!text || s.value.streaming) return
+  if (s.value.streaming) return
+  if (uploading.value) {
+    pendingSend.value = true
+    ElMessage.info('图片上传中，完成后将自动发送')
+    return
+  }
+  if (!text && !pendingImages.value.length) return
   const images = pendingImages.value.slice()
   input.value = ''
   pendingImages.value = []
@@ -155,7 +171,9 @@ defineExpose({ focusInput })
           placeholder="问问当前这一步怎么做、遇到的故障怎么处理…"
           @keydown.enter.exact.prevent="send"
         />
-        <button v-if="!s.streaming" class="send" :disabled="!input.trim()" @click="send">发送</button>
+        <button v-if="!s.streaming" class="send" :disabled="!uploading && !input.trim() && !pendingImages.length" @click="send">
+          {{ pendingSend ? '待发送' : '发送' }}
+        </button>
         <button v-else class="send stop" @click="stop">停止</button>
       </div>
     </div>

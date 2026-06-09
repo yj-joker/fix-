@@ -1,6 +1,13 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Search, ArrowRight } from '@element-plus/icons-vue'
+import {
+  ChatDotRound,
+  Connection,
+  Search,
+  Tickets,
+  User,
+  ArrowRight,
+} from '@element-plus/icons-vue'
 import HomeBanner from '@/components/HomeBanner.vue'
 import bannerDiagnosis from '@/assets/banners/user-carousel-diagnosis.png'
 import bannerTaskSteps from '@/assets/banners/user-carousel-task-steps.png'
@@ -34,7 +41,41 @@ const recentSearches = [
 ]
 
 const quickActions = [
-  { title: '智能检索', desc: '搜索设备型号、故障描述', path: '/user/search', icon: Search },
+  {
+    title: '智能检索',
+    desc: '按设备、故障现象或图片查找方案',
+    path: '/user/search',
+    icon: Search,
+    tone: 'blue',
+  },
+  {
+    title: '检修任务',
+    desc: '创建任务并跟进 AI 生成步骤',
+    path: '/user/tasks',
+    icon: Tickets,
+    tone: 'green',
+  },
+  {
+    title: '知识图谱',
+    desc: '查看设备、故障、方案关系',
+    path: '/user/graph',
+    icon: Connection,
+    tone: 'cyan',
+  },
+  {
+    title: 'AI 对话',
+    desc: '咨询排障思路和执行建议',
+    path: '/user/ai-chat',
+    icon: ChatDotRound,
+    tone: 'amber',
+  },
+  {
+    title: '个人中心',
+    desc: '查看账号资料和邮箱状态',
+    path: '/user/profile',
+    icon: User,
+    tone: 'slate',
+  },
 ]
 </script>
 
@@ -83,11 +124,14 @@ const quickActions = [
             :to="action.path"
             class="action-item"
           >
-            <div class="action-icon" :style="{ color: action.icon === Search ? '#334155' : '#22c55e' }">
+            <div class="action-icon" :class="action.tone">
               <el-icon><component :is="action.icon" /></el-icon>
             </div>
-            <span class="action-title">{{ action.title }}</span>
-            <span class="action-desc">{{ action.desc }}</span>
+            <span class="action-copy">
+              <span class="action-title">{{ action.title }}</span>
+              <span class="action-desc">{{ action.desc }}</span>
+            </span>
+            <el-icon class="action-arrow"><ArrowRight /></el-icon>
           </router-link>
         </div>
       </div>
@@ -222,26 +266,61 @@ const quickActions = [
 
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 .action-item {
-  display: flex;
-  flex-direction: column;
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 24px;
   align-items: center;
-  gap: 8px;
-  padding: 20px 16px;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--plaza-bg);
-  border-radius: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   text-decoration: none;
-  transition: all 0.2s ease;
-  text-align: center;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .action-item:hover {
   background: var(--plaza-accent-soft);
+  border-color: var(--plaza-border-strong);
+  transform: translateY(-1px);
 }
 .action-icon {
-  font-size: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: var(--plaza-bg-card);
+}
+.action-icon.blue {
+  color: var(--plaza-accent);
+  background: var(--plaza-info-soft);
+}
+.action-icon.green {
+  color: var(--plaza-success);
+  background: var(--plaza-success-soft);
+}
+.action-icon.cyan {
+  color: #0891b2;
+  background: #ecfeff;
+}
+.action-icon.amber {
+  color: var(--plaza-warning);
+  background: var(--plaza-warning-soft);
+}
+.action-icon.slate {
+  color: #475569;
+  background: #f1f5f9;
+}
+.action-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .action-title {
   font-size: 14px;
@@ -251,6 +330,15 @@ const quickActions = [
 .action-desc {
   font-size: 12px;
   color: var(--plaza-text-muted);
+  line-height: 1.4;
+}
+.action-arrow {
+  color: var(--plaza-text-muted);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.action-item:hover .action-arrow {
+  color: var(--plaza-accent);
+  transform: translateX(3px);
 }
 
 @media (max-width: 1100px) {

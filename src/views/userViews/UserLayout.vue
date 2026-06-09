@@ -9,6 +9,7 @@ import {
   ChatDotRound,
   Share,
   Tickets,
+  User,
   SwitchButton,
 } from '@element-plus/icons-vue'
 
@@ -52,9 +53,9 @@ const userType = computed(() => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     // 后端返回 type: 1 表示管理员, type: 0 表示普通用户
-    return userInfo.type == 1 ? '管理员' : '检修工人'
+    return userInfo.type == 1 ? '管理员' : '普通用户'
   } catch {
-    return '检修工人'
+    return '普通用户'
   }
 })
 
@@ -64,6 +65,7 @@ const menuItems = [
   { path: '/user/graph', name: '知识图谱', icon: Share },
   { path: '/user/tasks', name: '检修任务', icon: Tickets },
   { path: '/user/ai-chat', name: 'AI 对话', icon: ChatDotRound },
+  { path: '/user/profile', name: '个人中心', icon: User },
 ]
 
 function isActive(path) {
