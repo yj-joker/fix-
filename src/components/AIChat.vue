@@ -20,7 +20,7 @@ const props = defineProps({
   },
   welcomeMessage: {
     type: String,
-    default: '您好！我是 AI 助手，可以帮助您进行知识库检索、案例分析和作业指引等操作。有什么可以帮助您的吗？',
+    default: '您好！我是 AI 助手，可以帮助您进行知识库检索、案例分析和检修任务处理等操作。有什么可以帮助您的吗？',
   },
 })
 
@@ -72,13 +72,11 @@ function handleScroll() {
 
 function handleNewSession() {
   aiChatStore.newSession(props.storageKey)
-  showHistory.value = false
   scrollToBottom(true)
 }
 
 function handleSelectSession(sessionId) {
   aiChatStore.selectSession(props.storageKey, sessionId)
-  showHistory.value = false
   scrollToBottom(true)
 }
 
@@ -106,7 +104,7 @@ function sendQuickPrompt(prompt) {
 }
 
 watch(
-  () => messages.value.map((message) => `${message.id}:${message.content}:${message.status}`).join('|'),
+  () => messages.value.map((message) => `${message.id}:${message.content}:${message.status}:${(message.evidenceImages || []).length}`).join('|'),
   () => scrollToBottom(),
 )
 
@@ -118,16 +116,8 @@ onMounted(() => {
 
 <template>
   <section class="ai-chat-page">
-    <SessionSidebar
-      :open="showHistory"
-      :sessions="state.sessions"
-      :current-session-id="state.currentSessionId"
-      @new="handleNewSession"
-      @select="handleSelectSession"
-      @delete="handleDeleteSession"
-    />
-
-    <header class="chat-header">
+    <div class="chat-main">
+      <header class="chat-header">
       <div class="title-block">
         <div class="title-mark">
           <el-icon><ChatDotRound /></el-icon>
@@ -149,9 +139,10 @@ onMounted(() => {
           <el-icon><Delete /></el-icon>
         </button>
       </div>
-    </header>
+      </header>
 
     <main ref="bodyRef" class="messages-container" @scroll="handleScroll">
+      <div class="message-stream">
       <div v-if="messages.length <= 1" class="empty-state">
         <div class="empty-mark">
           <el-icon><ChatDotRound /></el-icon>
@@ -177,6 +168,7 @@ onMounted(() => {
         :message="message"
         :user-initial="userInitial"
       />
+      </div>
     </main>
 
     <transition name="fade">
@@ -191,6 +183,16 @@ onMounted(() => {
       @send="handleSend"
       @stop="handleStop"
     />
+    </div>
+
+    <SessionSidebar
+      :open="showHistory"
+      :sessions="state.sessions"
+      :current-session-id="state.currentSessionId"
+      @new="handleNewSession"
+      @select="handleSelectSession"
+      @delete="handleDeleteSession"
+    />
   </section>
 </template>
 
@@ -201,12 +203,21 @@ onMounted(() => {
   height: 100%;
   min-height: 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   overflow: hidden;
-  padding-top: 40px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(246, 248, 251, 0.96)),
     var(--plaza-bg);
+}
+
+.chat-main {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -214,8 +225,8 @@ onMounted(() => {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) auto;
   align-items: center;
-  gap: 18px;
-  padding: 18px 24px;
+  gap: 14px;
+  padding: 10px 24px;
   border-bottom: 1px solid var(--plaza-border);
   background: rgba(255, 255, 255, 0.9);
 }
@@ -224,14 +235,14 @@ onMounted(() => {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .title-mark {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
   background: #172033;
@@ -241,15 +252,15 @@ onMounted(() => {
 
 h1 {
   color: var(--plaza-heading);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   line-height: 1.2;
 }
 
 .title-block p {
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--plaza-text-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .header-actions {
@@ -258,8 +269,8 @@ h1 {
 }
 
 .header-actions button {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border: 1px solid var(--plaza-border);
   border-radius: 8px;
   display: grid;
@@ -269,7 +280,8 @@ h1 {
   cursor: pointer;
 }
 
-.header-actions button:hover {
+.header-actions button:hover,
+.header-actions button.active {
   border-color: var(--plaza-accent);
   color: var(--plaza-accent);
   background: var(--plaza-accent-soft);
@@ -278,17 +290,23 @@ h1 {
 .messages-container {
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
+  padding: 18px 24px 22px;
+}
+
+.message-stream {
+  width: min(920px, 100%);
+  min-height: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  overflow-y: auto;
-  padding: 22px 24px 32px;
+  gap: 15px;
 }
 
 .empty-state {
-  width: min(780px, 100%);
-  margin: 38px auto 12px;
-  padding: 24px;
+  width: 100%;
+  margin: 8px auto 4px;
+  padding: 20px;
   border: 1px solid var(--plaza-border);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.82);
@@ -296,25 +314,25 @@ h1 {
 }
 
 .empty-mark {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   display: grid;
   place-items: center;
   background: var(--plaza-accent-soft);
   color: var(--plaza-accent);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .empty-state h2 {
   color: var(--plaza-heading);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
 }
 
 .empty-state p {
   max-width: 620px;
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--plaza-text-muted);
   line-height: 1.7;
 }
@@ -322,13 +340,13 @@ h1 {
 .prompt-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .prompt-grid button {
-  min-height: 48px;
-  padding: 10px 12px;
+  min-height: 42px;
+  padding: 8px 11px;
   border: 1px solid var(--plaza-border);
   border-radius: 8px;
   background: var(--plaza-bg-card);
@@ -352,7 +370,7 @@ h1 {
 .latest-btn {
   position: absolute;
   left: 50%;
-  bottom: 118px;
+  bottom: 100px;
   z-index: 10;
   transform: translateX(-50%);
   height: 34px;

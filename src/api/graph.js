@@ -8,9 +8,6 @@ export function searchDevices(keyword = '', limit = 30) {
 }
 
 /** 设备概览（含部件数 / 故障数） */
-export function getDeviceOverview(id) {
-  return request({ url: `/weixiu/device/${id}`, method: 'GET' })
-}
 
 // 注：后端这三个分页查询是「0 基页码」，且 page/size 不可为 null（否则 NPE），
 // 故统一默认 page=0 / size=50；管理端按需传显式分页对象 { page, size }。
@@ -30,6 +27,11 @@ export function getFaultSolutions(faultId, { page = 0, size = 50, solutionTitle 
   return request({ url: '/weixiu/fault/solutions', method: 'POST', data: { faultId, solutionTitle, page, size } })
 }
 
+/** 故障 → 相关案例（RECORDED），分页 */
+export function getFaultCases(faultId, { page = 0, size = 50 } = {}) {
+  return request({ url: '/weixiu/fault/cases', method: 'POST', data: { faultId, page, size } })
+}
+
 /** 诊断路径搜索：按故障/部件描述召回完整链路子图 */
 export function searchDiagnosisPaths(payload) {
   return request({
@@ -40,9 +42,6 @@ export function searchDiagnosisPaths(payload) {
 }
 
 /** 单实体详情 */
-export function getEntity(type, id) {
-  return request({ url: `/weixiu/${type}/${id}`, method: 'GET' })
-}
 
 // ============ 审核（仅 admin 端调用） ============
 

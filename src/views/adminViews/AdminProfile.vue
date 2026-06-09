@@ -38,8 +38,8 @@
             </div>
             <div class="info-item">
               <label>状态</label>
-              <span class="status-badge" :class="userInfo.status === 1 ? 'active' : 'inactive'">
-                {{ userInfo.status === 1 ? '已激活' : '未激活' }}
+              <span class="status-badge" :class="getStatusClass(userInfo.status)">
+                {{ getStatusText(userInfo.status) }}
               </span>
             </div>
             <div class="info-item">
@@ -162,6 +162,15 @@ const getGenderText = (gender) => {
   return map[gender] ?? '-'
 }
 
+const getStatusText = (status) => {
+  const code = Number(status)
+  if (Number.isNaN(code)) return '-'
+  return code === 1 ? '已激活' : '未激活'
+}
+
+const getStatusClass = (status) => {
+  return Number(status) === 1 ? 'active' : 'inactive'
+}
 const formatDate = (date) => {
   if (!date) return '-'
   const d = new Date(date)
@@ -184,6 +193,10 @@ const fetchUserInfo = async () => {
       if (res.code === '200' || res.code === 200) {
         userInfo.value = res.data || {}
         form.email = userInfo.value.email || ''
+        localStorage.setItem('userInfo', JSON.stringify({
+          ...userData,
+          ...userInfo.value,
+        }))
       }
     }
   } catch (error) {
@@ -204,7 +217,8 @@ const handleUpdate = async () => {
       id: userData.id,
       name: userInfo.value.name,
       number: userInfo.value.number,
-      phone: userInfo.value.phone
+      phone: userInfo.value.phone,
+      email: form.email?.trim() || null
     })
     if (res.code === '200' || res.code === 200) {
       ElMessage.success('修改成功')

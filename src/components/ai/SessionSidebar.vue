@@ -74,23 +74,45 @@ function formatTime(timestamp) {
 
 <style scoped>
 .session-sidebar {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 300px;
-  z-index: 20;
+  --history-width: clamp(280px, 28vw, 320px);
+  position: relative;
+  width: 0;
+  flex: 0 0 0;
+  min-width: 0;
+  box-sizing: border-box;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  padding: 16px 0;
   background: rgba(255, 255, 255, 0.96);
-  border-right: 1px solid var(--plaza-border);
-  box-shadow: 12px 0 28px rgba(15, 23, 42, 0.08);
-  transform: translateX(-102%);
-  transition: transform 0.22s ease;
+  border-left: 0 solid transparent;
+  box-shadow: -12px 0 28px rgba(15, 23, 42, 0);
+  opacity: 0;
+  overflow: hidden;
+  transform: translateX(18px);
+  transition:
+    flex-basis 0.24s ease,
+    width 0.24s ease,
+    padding 0.24s ease,
+    border-color 0.24s ease,
+    box-shadow 0.24s ease,
+    opacity 0.18s ease,
+    transform 0.24s ease;
 }
 
 .session-sidebar.open {
+  width: var(--history-width);
+  flex-basis: var(--history-width);
+  padding: 16px;
+  border-left: 1px solid var(--plaza-border);
+  box-shadow: -12px 0 28px rgba(15, 23, 42, 0.08);
+  opacity: 1;
   transform: translateX(0);
+}
+
+.session-sidebar > * {
+  min-width: calc(var(--history-width) - 32px);
 }
 
 .side-head {
@@ -225,5 +247,11 @@ function formatTime(timestamp) {
   text-align: center;
   color: var(--plaza-text-muted);
   font-size: 13px;
+}
+
+@media (max-width: 860px) {
+  .session-sidebar {
+    --history-width: min(280px, 46vw);
+  }
 }
 </style>

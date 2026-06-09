@@ -13,7 +13,7 @@ export const TASK_STATUS = {
 export const taskStatus = (s) => TASK_STATUS[s] || { label: s || '未知', color: '#64748b', bg: '#f1f5f9' }
 
 /** 步骤状态：PENDING → SUBMITTED →(AI_PASSED | AI_REJECTED)→ COMPLETED，可 SKIPPED */
-export const STEP_STATUS = {
+const STEP_STATUS = {
   PENDING:     { label: '待执行',   color: '#64748b', bg: '#f1f5f9' },
   SUBMITTED:   { label: 'AI验证中', color: '#3b82f6', bg: '#eaf2ff', spin: true },
   AI_PASSED:   { label: 'AI通过',   color: '#16a34a', bg: '#f0fdf4' },
@@ -23,7 +23,6 @@ export const STEP_STATUS = {
 }
 export const stepStatus = (s) => STEP_STATUS[s] || { label: s || '未知', color: '#64748b', bg: '#f1f5f9' }
 /** 步骤是否处于「已了结」（绿/灰，不可再执行） */
-export const stepDone = (s) => ['AI_PASSED', 'COMPLETED', 'SKIPPED'].includes(s)
 /** 步骤是否可由工人执行/重做 */
 export const stepActionable = (s) => ['PENDING', 'AI_REJECTED'].includes(s)
 

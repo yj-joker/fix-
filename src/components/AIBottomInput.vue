@@ -249,13 +249,13 @@ onUnmounted(() => {
 <style scoped>
 .ai-composer {
   flex-shrink: 0;
-  padding: 12px 24px 18px;
-  background: linear-gradient(180deg, rgba(246, 248, 251, 0), var(--plaza-bg) 18%);
+  padding: 8px 24px 12px;
+  background: linear-gradient(180deg, rgba(246, 248, 251, 0), var(--plaza-bg) 26%);
 }
 
 .attachment-strip {
   max-width: 920px;
-  margin: 0 auto 8px;
+  margin: 0 auto 6px;
   display: flex;
   gap: 8px;
   overflow-x: auto;
@@ -264,10 +264,10 @@ onUnmounted(() => {
 .attachment {
   min-width: 230px;
   display: grid;
-  grid-template-columns: 48px 1fr 26px;
+  grid-template-columns: 44px 1fr 24px;
   align-items: center;
   gap: 8px;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid var(--plaza-border);
   border-radius: 8px;
   background: var(--plaza-bg-card);
@@ -278,8 +278,8 @@ onUnmounted(() => {
 }
 
 .attachment img {
-  width: 48px;
-  height: 42px;
+  width: 44px;
+  height: 36px;
   border-radius: 6px;
   object-fit: cover;
 }
@@ -333,7 +333,7 @@ onUnmounted(() => {
   border: 1px solid var(--plaza-border);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.98);
-  box-shadow: var(--plaza-shadow-organic-hover);
+  box-shadow: var(--plaza-shadow-organic);
   overflow: hidden;
 }
 
@@ -341,20 +341,20 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--plaza-border);
 }
 
 .composer-tools button {
-  height: 30px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 0 9px;
+  padding: 0 8px;
   border-radius: 7px;
   background: transparent;
   color: var(--plaza-text-muted);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .composer-tools button:hover,
@@ -372,23 +372,23 @@ onUnmounted(() => {
 
 .composer-row {
   display: grid;
-  grid-template-columns: 1fr 40px 40px;
+  grid-template-columns: 1fr 36px 36px;
   align-items: end;
-  gap: 8px;
-  padding: 10px;
+  gap: 6px;
+  padding: 8px 10px 6px;
 }
 
 textarea {
   width: 100%;
-  min-height: 56px;
-  max-height: 150px;
+  min-height: 44px;
+  max-height: 120px;
   resize: vertical;
   border: 0;
   outline: 0;
   background: transparent;
   color: var(--plaza-text);
-  font-size: 14.5px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 textarea::placeholder {
@@ -396,8 +396,8 @@ textarea::placeholder {
 }
 
 .round-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   display: grid;
   place-items: center;
@@ -431,9 +431,9 @@ textarea::placeholder {
 }
 
 .composer-hint {
-  min-height: 24px;
-  padding: 0 12px 8px;
+  min-height: 18px;
+  padding: 0 10px 6px;
   color: var(--plaza-text-muted);
-  font-size: 12px;
+  font-size: 11.5px;
 }
 </style>

@@ -48,10 +48,6 @@ export const updateMaintenanceManual = (formData) => {
  * 获取推荐手册
  * @param {number} limit - 推荐数量，默认6
  */
-export const getMaintenanceManualRecommend = (limit = 6) => {
-  return request({ url: `/weixiu/maintenance-manual/recommend?limit=${limit}`, method: 'GET' })
-}
-
 /**
  * 获取手册排行榜
  * @param {string} type - day/week/month/total

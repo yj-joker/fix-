@@ -40,11 +40,5 @@ export function saveSteps(procedureId, steps) {
 }
 
 /** 查询步骤列表 */
-export function getSteps(procedureId) {
-  return request({ url: `/weixiu/procedure/${procedureId}/steps`, method: 'GET' })
-}
 
 /** 删除单个步骤 */
-export function deleteStep(procedureId, stepId) {
-  return request({ url: `/weixiu/procedure/${procedureId}/steps/${stepId}`, method: 'DELETE', throwOnError: true })
-}

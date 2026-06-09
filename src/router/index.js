@@ -50,17 +50,22 @@ const routes = [
       {
         path: 'users',
         name: 'AdminUsers',
-        component: () => import('../views/adminViews/AdminUsers.vue')
+        redirect: { path: '/admin/system', query: { tab: 'users' } }
       },
       {
         path: 'knowledge',
         name: 'AdminKnowledge',
-        component: () => import('../views/adminViews/AdminKnowledge.vue')
+        redirect: { path: '/admin/knowledge-center', query: { tab: 'knowledge' } }
+      },
+      {
+        path: 'knowledge-center',
+        name: 'AdminKnowledgeCenter',
+        component: () => import('../views/adminViews/AdminKnowledgeCenter.vue')
       },
       {
         path: 'graph',
         name: 'AdminKnowledgeGraph',
-        component: () => import('../views/adminViews/AdminKnowledgeGraph.vue')
+        redirect: { path: '/admin/knowledge-center', query: { tab: 'graph' } }
       },
       {
         path: 'ai-chat',
@@ -75,17 +80,17 @@ const routes = [
       {
         path: 'settings',
         name: 'AdminSettings',
-        component: () => import('../views/adminViews/AdminSettings.vue')
+        redirect: { path: '/admin/system', query: { tab: 'users' } }
       },
       {
         path: 'profile',
         name: 'AdminProfile',
-        component: () => import('../views/adminViews/AdminProfile.vue')
+        redirect: { path: '/admin/system', query: { tab: 'profile' } }
       },
       {
         path: 'notify',
         name: 'AdminNotify',
-        component: () => import('../views/adminViews/AdminNotify.vue')
+        redirect: { path: '/admin/system', query: { tab: 'notify' } }
       },
       {
         path: 'tasks',
@@ -95,7 +100,12 @@ const routes = [
       {
         path: 'procedures',
         name: 'AdminProcedures',
-        component: () => import('../views/adminViews/AdminProcedures.vue')
+        redirect: { path: '/admin/knowledge-center', query: { tab: 'procedures' } }
+      },
+      {
+        path: 'system',
+        name: 'AdminSystemCenter',
+        component: () => import('../views/adminViews/AdminSystemCenter.vue')
       }
     ]
   },
@@ -114,11 +124,6 @@ const routes = [
         path: 'search',
         name: 'UserSearch',
         component: () => import('../views/userViews/UserSearch.vue')
-      },
-      {
-        path: 'guide',
-        name: 'UserGuide',
-        component: () => import('../views/userViews/UserGuide.vue')
       },
       {
         path: 'graph',

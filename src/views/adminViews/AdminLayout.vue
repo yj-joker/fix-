@@ -5,13 +5,9 @@ import RunningTasksTray from '@/components/RunningTasksTray.vue'
 import { notifyStore } from '@/stores/notifyStore'
 import {
   House,
-  User,
-  Document,
   Setting,
   SwitchButton,
-  Search,
   ChatDotRound,
-  Share,
   List,
   Collection,
 } from '@element-plus/icons-vue'
@@ -47,13 +43,10 @@ const userAvatar = computed(() => {
 
 const menuItems = [
   { path: '/admin/dashboard', name: '首页概览', icon: House },
-  { path: '/admin/users', name: '用户管理', icon: User },
-  { path: '/admin/knowledge', name: '知识库管理', icon: Document },
-  { path: '/admin/graph', name: '知识图谱', icon: Share },
   { path: '/admin/tasks', name: '任务管理', icon: List },
-  { path: '/admin/procedures', name: '标准规程', icon: Collection },
-  { path: '/admin/ai-chat', name: 'AI 对话', icon: ChatDotRound },
-  { path: '/admin/settings', name: '系统设置', icon: Setting },
+  { path: '/admin/knowledge-center', name: '知识中心', icon: Collection },
+  { path: '/admin/ai-chat', name: 'AI 助手', icon: ChatDotRound },
+  { path: '/admin/system', name: '系统管理', icon: Setting },
 ]
 
 const currentSection = computed(
@@ -71,24 +64,15 @@ function goToLogin() {
 }
 
 function isActive(path) {
-  return route.path === path
+  return route.path === path || route.path.startsWith(path + '/')
 }
 
 function handleHeaderSearch() {
   if (headerSearchQuery.value.trim()) {
-    router.push({ path: '/admin/knowledge', query: { q: headerSearchQuery.value } })
+    router.push({ path: '/admin/knowledge-center', query: { tab: 'knowledge', q: headerSearchQuery.value } })
   }
 }
 
-function handleDropdown(command) {
-  if (command === 'logout') {
-    goToLogin()
-  } else if (command === 'profile') {
-    // TODO: 个人信息页
-  } else if (command === 'my-info') {
-    // TODO: 我的信息页
-  }
-}
 </script>
 
 <template>
@@ -165,16 +149,6 @@ function handleDropdown(command) {
             <span class="status-text">系统在线</span>
             <span class="status-clock">{{ clock }}</span>
           </div>
-          <el-dropdown @command="handleDropdown" trigger="click">
-            <div class="avatar">{{ userAvatar }}</div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人信息</el-dropdown-item>
-                <el-dropdown-item command="my-info">我的信息</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
         </div>
       </header>
 
@@ -462,10 +436,20 @@ function handleDropdown(command) {
 }
 .rail.collapsed .brand,
 .rail.collapsed .rail-tag,
-.rail.collapsed .nav-item,
-.rail.collapsed .rail-foot {
+.rail.collapsed .nav-item {
   justify-content: center;
   gap: 0;
+}
+.rail.collapsed .rail-foot {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 14px;
+}
+.rail.collapsed .foot-user {
+  flex: 0 0 auto;
+  justify-content: center;
 }
 .rail.collapsed .rail-tag {
   padding: 7px;
@@ -571,24 +555,6 @@ function handleDropdown(command) {
   padding-left: 8px;
   border-left: 1px solid var(--plaza-border);
 }
-.avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  user-select: none;
-  color: #1b1205;
-  background: linear-gradient(150deg, var(--signal), var(--signal-strong));
-  box-shadow: 0 4px 14px rgba(255, 138, 0, 0.28);
-  transition: transform 0.18s ease;
-}
-.avatar:hover {
-  transform: translateY(-1px);
-}
 
 /* 内容 */
 .content {
@@ -606,8 +572,11 @@ function handleDropdown(command) {
   .rail .nav-text,
   .rail .foot-meta,
   .rail .foot-logout-text { opacity: 0; width: 0; overflow: hidden; }
-  .rail .brand, .rail .rail-tag, .rail .nav-item, .rail .rail-foot { justify-content: center; gap: 0; }
+  .rail .brand, .rail .rail-tag, .rail .nav-item { justify-content: center; gap: 0; }
+  .rail .rail-foot { flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 0 14px; }
+  .rail .foot-user { flex: 0 0 auto; justify-content: center; }
   .rail .nav-item { padding: 0; }
+  .rail .foot-logout { padding: 0; width: 32px; justify-content: center; }
   .main { margin-left: 76px; }
   .status-pill { display: none; }
 }

@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { aiChatStream } from '@/api/aiChat'
-import { flushSseBuffer, readSseChunk } from '@/utils/sse'
+import { flushSseEvents, readSseEvents } from '@/utils/sse'
 
 const MAX_SESSIONS = 20
 
@@ -17,6 +17,7 @@ function createWelcomeMessage(content) {
     role: 'assistant',
     content,
     images: [],
+    evidenceImages: [],
     timestamp: nowTime(),
     status: 'done',
   }
@@ -142,6 +143,7 @@ export const aiChatStore = {
       role: 'user',
       content,
       images: visibleImages,
+      evidenceImages: [],
       timestamp: nowTime(),
       status: 'done',
     })
@@ -151,6 +153,7 @@ export const aiChatStore = {
       role: 'assistant',
       content: '',
       images: [],
+      evidenceImages: [],
       timestamp: nowTime(),
       status: 'streaming',
     })
@@ -187,7 +190,7 @@ export const aiChatStore = {
 
     try {
       const response = await aiChatStream({
-        sessionId: session.id,
+        sessionId: session.backendSessionId || session.id,
         message: content,
         images: requestImages,
         thinking,
@@ -199,26 +202,48 @@ export const aiChatStore = {
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
+      const handleEvent = (event) => {
+        const data = event?.data || {}
+
+        if (event.event === 'token') {
+          fullContent += data.content || ''
+          startTypewriter()
+          return
+        }
+
+        if (event.event === 'done') {
+          assistant.evidenceImages = Array.isArray(data.evidenceImages) ? data.evidenceImages : []
+          return
+        }
+
+        if (event.event === 'session_id') {
+          if (data.session_id) {
+            session.backendSessionId = data.session_id
+          }
+          return
+        }
+
+        if (event.event === 'error') {
+          const message = data.message || '生成失败'
+          fullContent += fullContent ? `\n\n[错误] ${message}` : `[错误] ${message}`
+          assistant.status = 'error'
+          startTypewriter()
+        }
+      }
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         buffer += decoder.decode(value, { stream: true })
-        buffer = readSseChunk(buffer, (part) => {
-          fullContent += part
-          startTypewriter()
-        })
+        buffer = readSseEvents(buffer, handleEvent)
       }
-      flushSseBuffer(buffer, (part) => {
-        fullContent += part
-        startTypewriter()
-      })
+      flushSseEvents(buffer, handleEvent)
 
-      if (!fullContent.trim()) fullContent = '(空响应)'
+      if (!fullContent.trim() && !assistant.evidenceImages.length) fullContent = '(空响应)'
       startTypewriter()
       await waitForTypewriter()
       assistant.content = fullContent
-      assistant.status = 'done'
+      if (assistant.status !== 'error') assistant.status = 'done'
     } catch (error) {
       if (error.name === 'AbortError') {
         if (typeTimer) {

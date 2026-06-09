@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, DocumentAdd, Share, CloseBold, Right } from '@element-plus/icons-vue'
 import { getTaskList, promoteToProcedure, promoteToGraph, skipPromotion } from '@/api/task'
 import DistillationReviewPanel from '@/components/DistillationReviewPanel.vue'
+import CaseReviewPanel from '@/components/case/CaseReviewPanel.vue'
 
 /* ========== Tab ========== */
 const activeTab = ref('list')
@@ -176,6 +177,69 @@ function truncate(s, n = 28) {
   return s.length > n ? s.slice(0, n) + '…' : s
 }
 
+function parseGraphExtraction(extraction) {
+  if (!extraction) return null
+  if (typeof extraction === 'string') {
+    try {
+      return JSON.parse(extraction)
+    } catch {
+      return { raw: extraction }
+    }
+  }
+  return extraction
+}
+
+function normalizeList(value) {
+  if (!value) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+function itemText(item, keys = []) {
+  if (item == null) return ''
+  if (typeof item === 'string' || typeof item === 'number') return String(item)
+
+  const title = keys.map((key) => item[key]).find(Boolean)
+  const extras = []
+  if (item.specification) extras.push(`规格：${item.specification}`)
+  if (item.severity) extras.push(`严重度：${item.severity}`)
+  if (item.relatedComponent) extras.push(`关联部件：${item.relatedComponent}`)
+  if (item.relatedFault) extras.push(`关联故障：${item.relatedFault}`)
+  if (item.summary) extras.push(item.summary)
+  if (item.description) extras.push(item.description)
+
+  return [title, ...extras].filter(Boolean).join('｜')
+}
+
+function graphExtractionSections(extraction) {
+  const obj = parseGraphExtraction(extraction)
+  if (!obj) return []
+  if (obj.raw) return [{ title: '原始线索', items: [obj.raw] }]
+
+  const sections = [
+    {
+      title: '设备',
+      items: [
+        ...normalizeList(obj.deviceName),
+        ...normalizeList(obj.deviceNames),
+      ].filter(Boolean),
+    },
+    {
+      title: '部件',
+      items: normalizeList(obj.components).map((item) => itemText(item, ['name', 'componentName'])).filter(Boolean),
+    },
+    {
+      title: '故障',
+      items: normalizeList(obj.faults).map((item) => itemText(item, ['name', 'faultName', 'title'])).filter(Boolean),
+    },
+    {
+      title: '方案',
+      items: normalizeList(obj.solutions).map((item) => itemText(item, ['title', 'name', 'solutionTitle'])).filter(Boolean),
+    },
+  ]
+
+  return sections.filter((section) => section.items.length)
+}
+
 function needsDistill(row) {
   return canPromote(row) && (row.promotedProcedure === 'PENDING' || row.promotedGraph === 'PENDING')
 }
@@ -288,11 +352,23 @@ onMounted(() => loadTasks(1))
                   </div>
                   <div v-if="row.graphExtraction" class="exp-extraction">
                     <span class="exp-label">AI 图谱线索</span>
-                    <pre class="exp-json">{{ JSON.stringify(
-                      typeof row.graphExtraction === 'string'
-                        ? (() => { try { return JSON.parse(row.graphExtraction) } catch { return { raw: row.graphExtraction } } })()
-                        : row.graphExtraction,
-                      null, 2) }}</pre>
+                    <div class="exp-clue-list">
+                      <template v-if="graphExtractionSections(row.graphExtraction).length">
+                        <div
+                          v-for="section in graphExtractionSections(row.graphExtraction)"
+                          :key="section.title"
+                          class="exp-clue-section"
+                        >
+                          <span class="exp-clue-title">{{ section.title }}</span>
+                          <div class="exp-clue-tags">
+                            <span v-for="(item, index) in section.items" :key="`${section.title}-${index}`" class="exp-clue-tag">
+                              {{ item }}
+                            </span>
+                          </div>
+                        </div>
+                      </template>
+                      <span v-else class="exp-empty">暂无可展示线索</span>
+                    </div>
                   </div>
                 </div>
               </template>
@@ -457,6 +533,16 @@ onMounted(() => loadTasks(1))
           </span>
         </template>
         <DistillationReviewPanel :jump-to-id="focusTaskId" :key="activeTab === 'review' ? 'review' : 'idle'" />
+      </el-tab-pane>
+
+      <el-tab-pane name="case-review">
+        <template #label>
+          <span class="tab-label-custom">
+            案例审核
+            <span class="tab-badge">案例</span>
+          </span>
+        </template>
+        <CaseReviewPanel />
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -661,20 +747,52 @@ onMounted(() => loadTasks(1))
   padding-top: 12px;
   border-top: 1px solid #eef1f6;
 }
-.exp-json {
-  margin: 8px 0 0;
-  padding: 10px 14px;
+.exp-clue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px 12px;
   background: #fff;
   border: 1px solid #eef1f6;
   border-radius: 8px;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  line-height: 1.7;
+}
+.exp-clue-section {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+.exp-clue-title {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+.exp-clue-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.exp-clue-tag {
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   color: var(--plaza-text);
-  max-height: 200px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.exp-empty {
+  color: var(--plaza-text-muted);
+  font-size: 12px;
 }
 
 /* ── 操作列 ── */

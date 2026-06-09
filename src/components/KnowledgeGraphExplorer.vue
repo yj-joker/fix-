@@ -3,7 +3,7 @@ import { ref, reactive, shallowRef, onMounted, onBeforeUnmount, computed } from 
 import { Graph } from '@antv/g6'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  searchDevices, getDeviceComponents, getComponentFaults, getFaultSolutions,
+  searchDevices, getDeviceComponents, getComponentFaults, getFaultSolutions, getFaultCases,
   searchDiagnosisPaths, listUnverified, approveSolution, rejectNode,
 } from '../api/graph'
 
@@ -18,9 +18,10 @@ const TYPE = {
   component: { label: '部件', fill: '#e9faf1', stroke: '#22c55e', size: 34 },
   fault:     { label: '故障', fill: '#fff1e6', stroke: '#f97316', size: 31 },
   solution:  { label: '方案', fill: '#f1ecff', stroke: '#8b5cf6', size: 27 },
+  case:      { label: '案例', fill: '#ecfeff', stroke: '#0891b2', size: 29 },
 }
 const SEVERITY = { 轻微: '#eab308', 一般: '#f59e0b', 严重: '#f97316', 致命: '#ef4444' }
-const REL = { OWNS: '拥有', CAUSES: '引发', HAS_SOLUTION: '方案' }
+const REL = { OWNS: '拥有', CAUSES: '引发', HAS_SOLUTION: '方案', RECORDED: '案例' }
 const LABEL_FONT = "'JetBrains Mono','IBM Plex Mono',ui-monospace,monospace"
 
 /* ---------- 内部状态 ---------- */
@@ -172,7 +173,7 @@ async function expandNode(n) {
   const k = n.id
   if (expanded.has(k) || ui.busyNode) return
   const { type, rawId } = n.data
-  if (type === 'solution') return
+  if (type === 'solution' || type === 'case') return
   ui.busyNode = k
   try {
     if (type === 'device') {
@@ -184,12 +185,17 @@ async function expandNode(n) {
       list.forEach((f) => { const fk = addNode('fault', f.id, f.name, f); addEdge(k, fk, 'CAUSES') })
       flash(list.length, '故障')
     } else if (type === 'fault') {
-      const list = rows(await getFaultSolutions(rawId))
-      list.forEach((s) => {
+      const solutions = rows(await getFaultSolutions(rawId))
+      solutions.forEach((s) => {
         const sk = addNode('solution', s.id, s.title, s, { unverified: s.verified === false })
         addEdge(k, sk, 'HAS_SOLUTION')
       })
-      flash(list.length, '方案')
+      const cases = rows(await getFaultCases(rawId))
+      cases.forEach((c) => {
+        const ck = addNode('case', c.id, c.title || c.caseTitle || c.summary || '经验案例', c)
+        addEdge(k, ck, 'RECORDED')
+      })
+      flash(solutions.length + cases.length, '关联')
     }
     expanded.add(k)
     syncGraph()
@@ -313,6 +319,7 @@ const detailRows = computed(() => {
     component: [['编号', r.partNumber], ['规格', r.specification], ['供应商', r.supplier], ['寿命', r.lifecycle]],
     fault: [['等级', r.severity], ['类别', r.category], ['编码', r.code], ['描述', r.description]],
     solution: [['预计耗时', r.estimatedTime ? r.estimatedTime + ' 分钟' : null], ['难度', r.difficulty], ['工具', r.toolsRequired], ['描述', r.description || r.summary]],
+    case: [['故障', r.faultName], ['摘要', r.summary], ['经验', r.experienceSummary], ['结果', r.result], ['标签', Array.isArray(r.tags) ? r.tags.join('，') : r.tags]],
   }
   return (map[d.type] || []).filter(([, v]) => v != null && v !== '')
 })
@@ -409,7 +416,7 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
             <button class="act ok" :disabled="!!ui.busyNode" @click="doApprove">✓ 审核通过</button>
             <button class="act no" @click="doReject">✕ 拒绝删除</button>
           </div>
-          <p v-if="ui.selected.type!=='solution'" class="d-hint">点击节点可展开下一层关联 ▸</p>
+          <p v-if="!['solution','case'].includes(ui.selected.type)" class="d-hint">点击节点可展开下一层关联 ▸</p>
         </aside>
       </transition>
     </div>

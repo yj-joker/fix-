@@ -124,6 +124,15 @@ defineExpose({ focusInput })
             <img v-for="(u, k) in m.images" :key="k" :src="u" alt="" />
           </div>
           <div class="b-text" v-html="renderText(m.content)" />
+          <div v-if="m.role === 'assistant' && (m.evidenceImages || []).length" class="b-evidence">
+            <figure v-for="(item, k) in m.evidenceImages" :key="`${item.imageUrl}-${k}`">
+              <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.caption || item.sectionTitle || '证据图片'" />
+              <figcaption v-if="item.caption || item.sectionTitle || item.page">
+                <span>{{ item.caption || item.sectionTitle }}</span>
+                <small v-if="item.page">P{{ item.page }}</small>
+              </figcaption>
+            </figure>
+          </div>
         </div>
       </div>
     </div>
@@ -268,6 +277,45 @@ defineExpose({ focusInput })
   height: 64px;
   object-fit: cover;
   border-radius: 6px;
+}
+.b-evidence {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+.b-evidence figure {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #dbe7f8;
+  border-radius: 7px;
+  background: #fff;
+}
+.b-evidence img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.b-evidence figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 5px 6px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.b-evidence figcaption span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.b-evidence figcaption small {
+  flex-shrink: 0;
+  color: #3b82f6;
+  font-weight: 700;
 }
 .a-input {
   flex-shrink: 0;

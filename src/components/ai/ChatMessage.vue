@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { ChatDotRound, CopyDocument, User } from '@element-plus/icons-vue'
+import { ChatDotRound, CopyDocument } from '@element-plus/icons-vue'
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -8,6 +8,9 @@ const props = defineProps({
 })
 
 const isUser = computed(() => props.message.role === 'user')
+const evidenceImages = computed(() =>
+  (props.message.evidenceImages || []).filter((item) => item?.imageUrl),
+)
 
 async function copyMessage() {
   const text = props.message.content || ''
@@ -46,6 +49,16 @@ async function copyMessage() {
           <img v-for="(image, index) in message.images" :key="index" :src="image" alt="上传图片" />
         </div>
         <p v-if="message.content" class="message-text">{{ message.content }}</p>
+        <div v-if="!isUser && evidenceImages.length" class="evidence-list">
+          <figure v-for="(item, index) in evidenceImages" :key="`${item.imageUrl}-${index}`" class="evidence-item">
+            <img :src="item.imageUrl" :alt="item.caption || item.sectionTitle || '证据图片'" />
+            <figcaption v-if="item.caption || item.sectionTitle || item.page">
+              <span v-if="item.caption">{{ item.caption }}</span>
+              <span v-else-if="item.sectionTitle">{{ item.sectionTitle }}</span>
+              <small v-if="item.page">P{{ item.page }}</small>
+            </figcaption>
+          </figure>
+        </div>
         <div v-if="message.status === 'streaming' && !message.content" class="thinking">
           <span />
           <span />
@@ -66,8 +79,8 @@ async function copyMessage() {
 <style scoped>
 .chat-message {
   display: flex;
-  gap: 12px;
-  max-width: min(820px, 86%);
+  gap: 10px;
+  max-width: min(820px, 88%);
 }
 
 .chat-message.user {
@@ -76,10 +89,10 @@ async function copyMessage() {
 }
 
 .message-avatar {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
   background: #172033;
@@ -96,7 +109,7 @@ async function copyMessage() {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .chat-message.user .message-main {
@@ -106,9 +119,9 @@ async function copyMessage() {
 .message-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   color: var(--plaza-text-muted);
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 .status {
@@ -125,7 +138,7 @@ async function copyMessage() {
 }
 
 .message-bubble {
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--plaza-border);
   border-radius: 8px;
   background: var(--plaza-bg-card);
@@ -142,23 +155,68 @@ async function copyMessage() {
 .message-text {
   white-space: pre-wrap;
   word-break: break-word;
-  line-height: 1.72;
-  font-size: 14.5px;
+  line-height: 1.65;
+  font-size: 14px;
 }
 
 .image-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 7px;
+  margin-bottom: 7px;
 }
 
 .image-list img {
-  width: 128px;
-  height: 92px;
+  width: 112px;
+  height: 80px;
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.evidence-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.evidence-item {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.evidence-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.evidence-item figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 7px;
+  color: var(--plaza-text-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.evidence-item figcaption span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evidence-item figcaption small {
+  flex-shrink: 0;
+  color: var(--plaza-accent);
+  font-weight: 700;
 }
 
 .message-actions {
@@ -173,7 +231,7 @@ async function copyMessage() {
   border: 0;
   background: transparent;
   color: var(--plaza-text-muted);
-  font-size: 12px;
+  font-size: 11.5px;
   cursor: pointer;
   padding: 2px 4px;
 }

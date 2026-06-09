@@ -2,6 +2,7 @@ node_modules/
 dist/
 .DS_Store
 *.log
+.vite-dev.*
 *.swp
 *.swo
 src/api/request_*_*.js

@@ -1,7 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Search, ArrowRight, Document } from '@element-plus/icons-vue'
+import { Search, ArrowRight } from '@element-plus/icons-vue'
 import HomeBanner from '@/components/HomeBanner.vue'
+import bannerDiagnosis from '@/assets/banners/user-carousel-diagnosis.png'
+import bannerTaskSteps from '@/assets/banners/user-carousel-task-steps.png'
+import bannerStepVerify from '@/assets/banners/user-carousel-step-verify.png'
+import bannerKnowledgeGraph from '@/assets/banners/user-carousel-knowledge-graph.png'
+import bannerCaseRecord from '@/assets/banners/user-carousel-case-record.png'
 
 const userName = computed(() => {
   try {
@@ -13,12 +18,11 @@ const userName = computed(() => {
 })
 
 const bannerItems = [
-  { src: 'https://picsum.photos/800/600?random=1', title: '官网动态', href: '' },
-  { src: 'https://picsum.photos/800/600?random=2', title: 'featured', href: '' },
-  { src: 'https://picsum.photos/800/600?random=3', title: 'banner3', href: '' },
-  { src: 'https://picsum.photos/800/600?random=4', title: 'banner4', href: '' },
-  { src: 'https://picsum.photos/800/600?random=5', title: 'banner5', href: '' },
-  { src: 'https://picsum.photos/800/600?random=6', title: '电子海报', href: '' },
+  { src: bannerDiagnosis, title: '智能故障诊断', href: '' },
+  { src: bannerTaskSteps, title: 'AI 生成检修步骤', href: '' },
+  { src: bannerStepVerify, title: '步骤执行与 AI 验证', href: '' },
+  { src: bannerKnowledgeGraph, title: '知识图谱与手册检索', href: '' },
+  { src: bannerCaseRecord, title: '案例经验沉淀', href: '' },
 ]
 
 const stats = []
@@ -31,7 +35,6 @@ const recentSearches = [
 
 const quickActions = [
   { title: '智能检索', desc: '搜索设备型号、故障描述', path: '/user/search', icon: Search },
-  { title: '作业指引', desc: '查看标准操作流程', path: '/user/guide', icon: Document },
 ]
 </script>
 
@@ -40,7 +43,7 @@ const quickActions = [
     <!-- Welcome -->
     <div class="welcome-section">
       <h1 class="welcome-title">欢迎回来，<span class="highlight">{{ userName }}</span></h1>
-      <p class="welcome-desc">您可以在这里进行设备检修知识检索和查看作业指引</p>
+      <p class="welcome-desc">您可以在这里进行设备检修知识检索、任务处理和知识图谱查询</p>
     </div>
 
     <!-- Banner Carousel -->

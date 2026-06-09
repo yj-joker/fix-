@@ -5,7 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Edit, View, Upload, DocumentDelete, Check, Box, WarningFilled, Delete } from '@element-plus/icons-vue'
 import {
   getProcedureList, getProcedureDetail, createProcedure, updateProcedure,
-  publishProcedure, archiveProcedure, saveSteps, deleteStep,
+  publishProcedure, archiveProcedure, saveSteps,
 } from '@/api/procedure'
 
 /* ========== 枚举 ========== */

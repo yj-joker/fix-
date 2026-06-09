@@ -6,7 +6,6 @@ import { notifyStore } from '@/stores/notifyStore'
 import {
   House,
   Search,
-  DocumentChecked,
   ChatDotRound,
   Share,
   Tickets,
@@ -62,7 +61,6 @@ const userType = computed(() => {
 const menuItems = [
   { path: '/user/dashboard', name: '首页概览', icon: House },
   { path: '/user/search', name: '智能检索', icon: Search },
-  { path: '/user/guide', name: '作业指引', icon: DocumentChecked },
   { path: '/user/graph', name: '知识图谱', icon: Share },
   { path: '/user/tasks', name: '检修任务', icon: Tickets },
   { path: '/user/ai-chat', name: 'AI 对话', icon: ChatDotRound },
@@ -86,15 +84,6 @@ function goToLogin() {
   router.push('/login')
 }
 
-function handleDropdown(command) {
-  if (command === 'logout') {
-    goToLogin()
-  } else if (command === 'profile') {
-    // TODO
-  } else if (command === 'my-info') {
-    // TODO
-  }
-}
 </script>
 
 <template>
@@ -167,16 +156,6 @@ function handleDropdown(command) {
             <span class="status-text">{{ userName }}</span>
             <span class="status-clock">{{ clock }}</span>
           </div>
-          <el-dropdown @command="handleDropdown" trigger="click">
-            <div class="avatar">{{ userAvatar }}</div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人信息</el-dropdown-item>
-                <el-dropdown-item command="my-info">我的信息</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
         </div>
       </header>
 
@@ -451,10 +430,20 @@ function handleDropdown(command) {
 }
 .rail.collapsed .brand,
 .rail.collapsed .rail-tag,
-.rail.collapsed .nav-item,
-.rail.collapsed .rail-foot {
+.rail.collapsed .nav-item {
   justify-content: center;
   gap: 0;
+}
+.rail.collapsed .rail-foot {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 14px;
+}
+.rail.collapsed .foot-user {
+  flex: 0 0 auto;
+  justify-content: center;
 }
 .rail.collapsed .rail-tag { padding: 7px; }
 .rail.collapsed .nav-item { padding: 0; }
@@ -542,23 +531,6 @@ function handleDropdown(command) {
   padding-left: 8px;
   border-left: 1px solid var(--plaza-border);
 }
-.avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  user-select: none;
-  color: #1b1205;
-  background: linear-gradient(150deg, var(--signal), var(--signal-strong));
-  box-shadow: 0 4px 14px rgba(255, 138, 0, 0.28);
-  transition: transform 0.18s ease;
-}
-.avatar:hover { transform: translateY(-1px); }
-
 .content {
   flex: 1;
   padding: 30px 26px;
@@ -574,8 +546,11 @@ function handleDropdown(command) {
   .rail .nav-text,
   .rail .foot-meta,
   .rail .foot-logout-text { opacity: 0; width: 0; overflow: hidden; }
-  .rail .brand, .rail .rail-tag, .rail .nav-item, .rail .rail-foot { justify-content: center; gap: 0; }
+  .rail .brand, .rail .rail-tag, .rail .nav-item { justify-content: center; gap: 0; }
+  .rail .rail-foot { flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 0 14px; }
+  .rail .foot-user { flex: 0 0 auto; justify-content: center; }
   .rail .nav-item { padding: 0; }
+  .rail .foot-logout { padding: 0; width: 32px; justify-content: center; }
   .main { margin-left: 76px; }
   .status-pill { display: none; }
 }
