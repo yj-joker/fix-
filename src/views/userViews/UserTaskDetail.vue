@@ -212,7 +212,7 @@ onMounted(load)
 
 <style scoped>
 .detail { max-width: 860px; margin: 0 auto; min-height: 300px; }
-.detail.wide { max-width: 1240px; }
+.detail.wide { max-width: 1320px; }
 .back { background: none; border: none; color: #3b82f6; font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 14px; }
 .back:hover { text-decoration: underline; }
 .t-head { background: #fff; border: 1px solid #e6eaf1; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 12px rgba(51,65,85,.05); }
@@ -247,7 +247,7 @@ onMounted(load)
 .work { display: flex; gap: 16px; align-items: flex-start; margin-top: 16px; }
 .col-steps { flex: 1; min-width: 0; }
 .steps { display: flex; flex-direction: column; gap: 14px; }
-.col-assistant { width: 384px; flex-shrink: 0; position: sticky; top: 8px; height: calc(100vh - 120px); }
+.col-assistant { width: 440px; flex-shrink: 0; position: sticky; top: 8px; height: calc(100vh - 120px); }
 .my-case-list { min-height: 180px; display: flex; flex-direction: column; gap: 10px; }
 .my-case-empty { color: #94a3b8; text-align: center; padding: 44px 0; }
 .my-case-card { border: 1px solid #e6eaf1; border-radius: 10px; padding: 12px; background: #fff; }
