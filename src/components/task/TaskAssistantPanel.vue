@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { ArrowDown, ArrowUp, ChatDotRound } from '@element-plus/icons-vue'
 import { uploadImage } from '@/api/user'
 import { taskAssistantStore } from '@/stores/taskAssistantStore'
 import { extractUploadedImageUrl } from '@/utils/upload'
@@ -18,6 +19,7 @@ const uploading = ref(false)
 const pendingSend = ref(false)
 const bodyRef = ref(null)
 const inputRef = ref(null)
+const openTimelines = ref({})
 
 const sortedSteps = computed(() =>
   props.steps.slice().sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
@@ -58,11 +60,6 @@ function renderText(t) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>')
-}
-
-function isLongMessage(message) {
-  const text = String(message?.content || '')
-  return text.length >= 80 || text.includes('\n') || (message?.evidenceImages || []).length > 0
 }
 
 async function onPickFiles(e) {
@@ -112,6 +109,39 @@ function stop() {
   taskAssistantStore.stop(props.taskId)
 }
 
+function isUser(message) {
+  return message?.role === 'user'
+}
+
+function agentSteps(message) {
+  return Array.isArray(message?.agentSteps) ? message.agentSteps : []
+}
+
+function agentProgress(message) {
+  return message?.agentProgress || { text: '', running: false }
+}
+
+function showAgentProgress(message) {
+  return !isUser(message) && (agentSteps(message).length > 0 || message?.status === 'streaming')
+}
+
+function agentProgressText(message) {
+  return agentProgress(message).text || (message?.status === 'streaming' ? '正在处理...' : '')
+}
+
+function timelineKey(message, index) {
+  return message?.id || `${message?.role || 'message'}-${index}`
+}
+
+function toggleTimeline(message, index) {
+  const key = timelineKey(message, index)
+  openTimelines.value = { ...openTimelines.value, [key]: !openTimelines.value[key] }
+}
+
+function isTimelineOpen(message, index) {
+  return Boolean(openTimelines.value[timelineKey(message, index)])
+}
+
 // 供父组件（点步骤卡「问AI」）聚焦输入框
 function focusInput() {
   nextTick(() => inputRef.value?.focus?.())
@@ -139,12 +169,34 @@ defineExpose({ focusInput })
         <p>我已经知道这条任务和你正在做的步骤。</p>
         <p class="a-empty-sub">遇到卡壳、拿不准、或步骤里没写到的情况，随时问我——当前聚焦：<b>{{ focusedTitle }}</b></p>
       </div>
-      <div v-for="(m, i) in s.messages" :key="i" class="row" :class="[m.role, { long: isLongMessage(m) }]">
-        <div class="bubble">
+      <article v-for="(m, i) in s.messages" :key="timelineKey(m, i)" class="message" :class="{ user: isUser(m) }">
+        <div class="avatar" :class="{ user: isUser(m) }">
+          <span v-if="isUser(m)">我</span>
+          <el-icon v-else><ChatDotRound /></el-icon>
+        </div>
+
+        <div class="message-main">
+          <div class="message-meta">
+            <span>{{ isUser(m) ? '我' : '检修 AI 助手' }}</span>
+            <span v-if="m.timestamp">{{ m.timestamp }}</span>
+            <span v-if="m.status === 'streaming'" class="status">生成中</span>
+            <span v-if="m.status === 'stopped'" class="status warn">已停止</span>
+            <span v-if="m.status === 'error'" class="status danger">异常</span>
+          </div>
+
           <div v-if="(m.images || []).length" class="b-imgs">
             <img v-for="(u, k) in m.images" :key="k" :src="u" alt="" />
           </div>
-          <div class="b-text" v-html="renderText(m.content)" />
+
+          <div class="bubble">
+            <div v-if="m.content" class="b-text" v-html="renderText(m.content)" />
+            <div v-if="m.status === 'streaming' && !m.content" class="thinking">
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+
           <div v-if="m.role === 'assistant' && (m.evidenceImages || []).length" class="b-evidence">
             <figure v-for="(item, k) in m.evidenceImages" :key="`${item.imageUrl}-${k}`">
               <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.caption || item.sectionTitle || '证据图片'" />
@@ -154,8 +206,33 @@ defineExpose({ focusInput })
               </figcaption>
             </figure>
           </div>
+
+          <div v-if="showAgentProgress(m)" class="agent-progress" :class="{ running: agentProgress(m).running }">
+            <button type="button" class="agent-progress-row" @click="toggleTimeline(m, i)">
+              <span class="agent-progress-text">{{ agentProgressText(m) }}</span>
+              <el-icon class="agent-progress-toggle">
+                <ArrowUp v-if="isTimelineOpen(m, i)" />
+                <ArrowDown v-else />
+              </el-icon>
+            </button>
+
+            <div v-if="isTimelineOpen(m, i) && agentSteps(m).length" class="agent-timeline">
+              <div
+                v-for="step in agentSteps(m)"
+                :key="step.id"
+                class="agent-step"
+                :class="`is-${step.status || 'done'}`"
+              >
+                <span class="agent-step-dot" />
+                <div class="agent-step-body">
+                  <div class="agent-step-title">{{ step.title }}</div>
+                  <div v-if="step.detail" class="agent-step-detail">{{ step.detail }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </article>
     </div>
 
     <div class="a-input">
@@ -279,53 +356,88 @@ defineExpose({ focusInput })
 .a-empty b {
   color: #3b82f6;
 }
-.row {
+.message {
+  width: 100%;
+  min-width: 0;
   display: flex;
+  gap: 9px;
 }
-.row.user {
-  justify-content: flex-end;
+.message.user {
+  flex-direction: row-reverse;
+}
+.avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #172033;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+}
+.avatar.user {
+  background: #3b82f6;
+}
+.message-main {
+  min-width: 0;
+  width: min(100%, 620px);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.message.user .message-main {
+  width: auto;
+  max-width: min(84%, 520px);
+  align-items: flex-end;
+}
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #94a3b8;
+  font-size: 11.5px;
+}
+.status {
+  color: #3b82f6;
+  font-weight: 600;
+}
+.status.warn {
+  color: #f59e0b;
+}
+.status.danger {
+  color: #ef4444;
 }
 .bubble {
-  width: fit-content;
-  max-width: 82%;
-  padding: 9px 12px;
-  border-radius: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #dbe7f8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  box-shadow: 0 1px 8px rgba(51, 65, 85, 0.05);
   font-size: 14px;
   line-height: 1.65;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
-.row.assistant .bubble {
-  max-width: min(76%, 560px);
-  background: #f1f5f9;
-  color: #334155;
-  border-bottom-left-radius: 4px;
-}
-.row.assistant.long .bubble {
-  width: min(76%, 560px);
-}
-.row.user .bubble {
-  max-width: min(74%, 520px);
+.message.user .bubble {
+  width: fit-content;
+  max-width: 100%;
+  border-color: transparent;
   background: #3b82f6;
   color: #fff;
-  border-bottom-right-radius: 4px;
-}
-.row.user.long .bubble {
-  width: min(74%, 520px);
 }
 .b-text {
-  display: inline;
-}
-.row.assistant.long .b-text {
   display: block;
-  text-align: justify;
-  text-align-last: left;
 }
 .b-imgs {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 .b-imgs img {
   width: 64px;
@@ -337,7 +449,7 @@ defineExpose({ focusInput })
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 3px;
 }
 .b-evidence figure {
   margin: 0;
@@ -371,6 +483,127 @@ defineExpose({ focusInput })
   flex-shrink: 0;
   color: #3b82f6;
   font-weight: 700;
+}
+.agent-progress {
+  width: 100%;
+  max-width: 100%;
+  color: #64748b;
+  font-size: 12px;
+}
+.agent-progress-row {
+  position: relative;
+  width: 100%;
+  min-height: 24px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.agent-progress.running .agent-progress-row::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -42%;
+  width: 42%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.22), transparent);
+  animation: agent-sweep 1.5s linear infinite;
+}
+.agent-progress-text {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-progress-toggle {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.agent-timeline {
+  margin-top: 5px;
+  padding: 2px 0 2px 12px;
+  border-left: 1px solid rgba(148, 163, 184, 0.35);
+}
+.agent-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr);
+  gap: 7px;
+  padding: 3px 0 7px;
+}
+.agent-step-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  margin-left: -16px;
+  border-radius: 999px;
+  background: #94a3b8;
+  box-shadow: 0 0 0 3px #fff;
+}
+.agent-step.is-running .agent-step-dot {
+  background: #3b82f6;
+}
+.agent-step.is-warn .agent-step-dot {
+  background: #f59e0b;
+}
+.agent-step.is-error .agent-step-dot {
+  background: #ef4444;
+}
+.agent-step-body {
+  min-width: 0;
+}
+.agent-step-title {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.agent-step-detail {
+  margin-top: 1px;
+  color: #94a3b8;
+  font-size: 11.5px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.thinking {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 24px;
+}
+.thinking span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+  animation: pulse 1.1s infinite;
+}
+.thinking span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.thinking span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+@keyframes agent-sweep {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(340%); }
+}
+@keyframes pulse {
+  0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
 }
 .a-input {
   flex-shrink: 0;
