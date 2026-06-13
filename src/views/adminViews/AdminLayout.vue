@@ -501,7 +501,7 @@ function handleHeaderSearch() {
 }
 .loc-root {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: 0.4px;
   color: var(--plaza-text-muted);

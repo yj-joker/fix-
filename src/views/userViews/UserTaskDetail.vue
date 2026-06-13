@@ -164,7 +164,7 @@ onMounted(load)
 
       <!-- 执行中 / 已完成：步骤列表 + 常驻助手 -->
       <template v-else>
-      <div v-if="task.status === 'CLOSED'" class="state-box done">✓ 该检修任务已全部完成</div>
+      <div v-if="task.status === 'CLOSED'" class="state-box done">该检修任务已全部完成</div>
         <div v-if="task.status === 'CLOSED'" class="case-actions">
           <button class="case-btn primary" :disabled="acting" @click="openCaseDialog">沉淀为案例</button>
           <button class="case-btn" @click="openMyCases">我的案例</button>

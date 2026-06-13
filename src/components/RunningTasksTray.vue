@@ -31,7 +31,7 @@ function elapsed(ts) {
             <div class="ti-title">{{ job.title }}</div>
             <div class="ti-sub">已运行 {{ elapsed(job.startedAt) }} · 完成后将自动提示</div>
           </div>
-          <button class="ti-x" title="从列表移除（不影响后台执行）" @click="notifyStore.dismiss(job.key)">✕</button>
+          <button class="ti-x" title="从列表移除（不影响后台执行）" @click="notifyStore.dismiss(job.key)">移除</button>
         </li>
       </ul>
     </div>

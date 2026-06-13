@@ -32,17 +32,17 @@
 
       <div class="operation-cards">
         <div class="operation-card">
-          <div class="card-icon">🔧</div>
+          <div class="card-icon">维护</div>
           <h3>日常保养</h3>
           <p>设备日常维护保养标准流程</p>
         </div>
         <div class="operation-card">
-          <div class="card-icon">🔍</div>
+          <div class="card-icon">检索</div>
           <h3>故障检修</h3>
           <p>故障诊断与修复操作指引</p>
         </div>
         <div class="operation-card">
-          <div class="card-icon">✓</div>
+          <div class="card-icon">合规</div>
           <h3>合规检查</h3>
           <p>检修作业合规性校验</p>
         </div>

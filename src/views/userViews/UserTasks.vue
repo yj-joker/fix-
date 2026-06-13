@@ -39,7 +39,7 @@ onMounted(load)
   <div class="tasks">
     <div class="head">
       <div class="title"><span class="led" />检修任务</div>
-      <button class="new" @click="showCreate = true">＋ 新建任务</button>
+      <button class="new" @click="showCreate = true">新建任务</button>
     </div>
 
     <div class="filters">

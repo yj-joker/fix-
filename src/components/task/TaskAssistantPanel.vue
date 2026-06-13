@@ -60,6 +60,11 @@ function renderText(t) {
     .replace(/\n/g, '<br>')
 }
 
+function isLongMessage(message) {
+  const text = String(message?.content || '')
+  return text.length >= 80 || text.includes('\n') || (message?.evidenceImages || []).length > 0
+}
+
 async function onPickFiles(e) {
   const files = Array.from(e.target.files || [])
   e.target.value = ''
@@ -117,7 +122,7 @@ defineExpose({ focusInput })
 <template>
   <div class="assistant">
     <div class="a-head">
-      <div class="a-title"><span class="a-bot">🤖</span> 检修助手</div>
+      <div class="a-title"><span class="a-bot">AI</span> 检修助手</div>
       <div class="a-focus">
         <span class="a-focus-lbl">聚焦</span>
         <select v-model="s.focusedStepId" class="a-focus-sel">
@@ -131,10 +136,10 @@ defineExpose({ focusInput })
 
     <div ref="bodyRef" class="a-body">
       <div v-if="!s.messages.length" class="a-empty">
-        <p>👋 我已经知道这条任务和你正在做的步骤。</p>
+        <p>我已经知道这条任务和你正在做的步骤。</p>
         <p class="a-empty-sub">遇到卡壳、拿不准、或步骤里没写到的情况，随时问我——当前聚焦：<b>{{ focusedTitle }}</b></p>
       </div>
-      <div v-for="(m, i) in s.messages" :key="i" class="row" :class="m.role">
+      <div v-for="(m, i) in s.messages" :key="i" class="row" :class="[m.role, { long: isLongMessage(m) }]">
         <div class="bubble">
           <div v-if="(m.images || []).length" class="b-imgs">
             <img v-for="(u, k) in m.images" :key="k" :src="u" alt="" />
@@ -156,19 +161,23 @@ defineExpose({ focusInput })
     <div class="a-input">
       <div v-if="pendingImages.length" class="pending">
         <div v-for="(u, i) in pendingImages" :key="i" class="p-item">
-          <img :src="u" alt="" /><button class="p-x" @click="removePending(i)">✕</button>
+          <img :src="u" alt="" /><button class="p-x" @click="removePending(i)">移除</button>
         </div>
       </div>
       <div class="a-row">
         <label class="attach" :class="{ busy: uploading }" title="附照片">
           <input type="file" accept="image/*" multiple hidden @change="onPickFiles" />
-          <span v-if="uploading">…</span><span v-else>📎</span>
+          <span v-if="uploading" class="attach-loading">上传中</span>
+          <svg v-else class="attach-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" aria-hidden="true">
+            <path fill="currentColor" d="M160 160v704h704V160zm-32-64h768a32 32 0 0 1 32 32v768a32 32 0 0 1-32 32H128a32 32 0 0 1-32-32V128a32 32 0 0 1 32-32"></path>
+            <path fill="currentColor" d="M384 288q64 0 64 64t-64 64-64-64 64-64M185.408 876.992l-50.816-38.912L350.72 556.032a96 96 0 0 1 134.592-17.856l1.856 1.472 122.88 99.136a32 32 0 0 0 44.992-4.864l216-269.888 49.92 39.936-215.808 269.824-.256.32a96 96 0 0 1-135.04 14.464l-122.88-99.072-.64-.512a32 32 0 0 0-44.8 5.952z"></path>
+          </svg>
         </label>
         <textarea
           ref="inputRef"
           v-model="input"
           rows="2"
-          placeholder="问问当前这一步怎么做、遇到的故障怎么处理…"
+          placeholder="询问当前步骤"
           @keydown.enter.exact.prevent="send"
         />
         <button v-if="!s.streaming" class="send" :disabled="!uploading && !input.trim() && !pendingImages.length" @click="send">
@@ -193,12 +202,13 @@ defineExpose({ focusInput })
 }
 .a-head {
   flex-shrink: 0;
-  padding: 12px 14px;
+  min-height: 64px;
+  padding: 14px 16px;
   border-bottom: 1px solid #eef2fb;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   background: linear-gradient(180deg, #f7faff, #fff);
 }
 .a-title {
@@ -215,7 +225,7 @@ defineExpose({ focusInput })
 .a-focus {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 .a-focus-lbl {
@@ -224,14 +234,23 @@ defineExpose({ focusInput })
 }
 .a-focus-sel {
   max-width: 160px;
+  min-height: 34px;
   font-size: 12px;
   color: #3b82f6;
   font-weight: 600;
   border: 1px solid #cbdbf5;
   border-radius: 6px;
-  padding: 3px 6px;
+  padding: 6px 28px 6px 8px;
+  line-height: 20px;
   background: #f5f9ff;
   cursor: pointer;
+}
+.a-focus-sel option {
+  min-height: 32px;
+  padding: 7px 8px;
+  line-height: 32px;
+  color: #334155;
+  font-weight: 500;
 }
 .a-body {
   flex: 1;
@@ -267,22 +286,40 @@ defineExpose({ focusInput })
   justify-content: flex-end;
 }
 .bubble {
-  max-width: 86%;
-  padding: 9px 13px;
+  width: fit-content;
+  max-width: 82%;
+  padding: 9px 12px;
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.65;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .row.assistant .bubble {
+  max-width: min(76%, 560px);
   background: #f1f5f9;
   color: #334155;
   border-bottom-left-radius: 4px;
 }
+.row.assistant.long .bubble {
+  width: min(76%, 560px);
+}
 .row.user .bubble {
+  max-width: min(74%, 520px);
   background: #3b82f6;
   color: #fff;
   border-bottom-right-radius: 4px;
+}
+.row.user.long .bubble {
+  width: min(74%, 520px);
+}
+.b-text {
+  display: inline;
+}
+.row.assistant.long .b-text {
+  display: block;
+  text-align: justify;
+  text-align-last: left;
 }
 .b-imgs {
   display: flex;
@@ -376,7 +413,7 @@ defineExpose({ focusInput })
 .a-row {
   display: flex;
   gap: 8px;
-  align-items: flex-end;
+  align-items: center;
 }
 .attach {
   flex-shrink: 0;
@@ -389,12 +426,24 @@ defineExpose({ focusInput })
   cursor: pointer;
   font-size: 16px;
   background: #f8faff;
+  color: #3b82f6;
 }
 .attach:hover {
   background: #eaf2ff;
 }
+.attach-icon {
+  width: 20px;
+  height: 20px;
+}
+.attach-loading {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
 .a-row textarea {
   flex: 1;
+  height: 38px;
+  min-height: 38px;
   resize: none;
   border: 1px solid #cbdbf5;
   border-radius: 8px;
@@ -402,7 +451,8 @@ defineExpose({ focusInput })
   font-size: 14px;
   font-family: inherit;
   outline: none;
-  line-height: 1.5;
+  line-height: 20px;
+  overflow-y: auto;
 }
 .a-row textarea:focus {
   border-color: #3b82f6;

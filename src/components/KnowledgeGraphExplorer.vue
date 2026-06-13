@@ -295,14 +295,14 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
           <div class="panel-h">设备入口</div>
           <el-input v-model="ui.deviceKw" placeholder="设备名 / 编码 / 型号（空=全部）" size="small"
                     @keyup.enter="onSearchDevices" clearable />
-          <button class="hud-btn" :disabled="ui.loading" @click="onSearchDevices">检索设备 ▸</button>
+          <button class="hud-btn" :disabled="ui.loading" @click="onSearchDevices">检索设备</button>
         </div>
 
         <div class="panel">
           <div class="panel-h">诊断路径</div>
           <el-input v-model="ui.diagKw" type="textarea" :rows="2" placeholder="描述故障现象 / 部件，召回链路子图"
                     @keyup.enter.exact.prevent="onDiagnose" />
-          <button class="hud-btn b-amber" :disabled="ui.loading" @click="onDiagnose">语义召回 ▸</button>
+          <button class="hud-btn b-amber" :disabled="ui.loading" @click="onDiagnose">语义召回</button>
         </div>
 
         <div class="panel ops">
@@ -336,7 +336,7 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
           <span class="corner tl" /><span class="corner br" />
           <div class="d-head">
             <span class="d-type" :style="{ color: ui.selected.stroke }">{{ TYPE[ui.selected.type]?.label }}</span>
-            <button class="d-close" @click="ui.showDetail=false">✕</button>
+            <button class="d-close" @click="ui.showDetail=false">关闭</button>
           </div>
           <h3 class="d-name">{{ ui.selected.fullLabel }}</h3>
           <dl class="d-attrs">
@@ -350,7 +350,7 @@ onBeforeUnmount(() => { clearTimeout(renderTimer); graph.value?.destroy() })
             <img v-for="(u,i) in ui.selected.raw.imageUrls" :key="i" :src="u" alt="" />
           </div>
 
-          <p v-if="!['solution','case'].includes(ui.selected.type)" class="d-hint">点击节点可展开下一层关联 ▸</p>
+          <p v-if="!['solution','case'].includes(ui.selected.type)" class="d-hint">点击节点可展开下一层关联</p>
         </aside>
       </transition>
     </div>

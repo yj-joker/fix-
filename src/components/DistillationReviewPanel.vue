@@ -259,17 +259,17 @@ const levelLabels = { ROUTINE: '日常保养', MINOR: '小修', MAJOR: '大修' 
 function cardActions(task) {
   const acts = []
   if (task.promotedProcedure === 'PENDING') {
-    acts.push({ key: 'procedure', label: '沉淀为规程', icon: '📋', fn: () => handlePromoteProcedure(task) })
+    acts.push({ key: 'procedure', label: '沉淀为规程', icon: '', fn: () => handlePromoteProcedure(task) })
   }
   if (task.promotedGraph === 'PENDING') {
-    acts.push({ key: 'graph', label: '沉淀到图谱', icon: '🔗', fn: () => handlePromoteGraph(task) })
+    acts.push({ key: 'graph', label: '沉淀到图谱', icon: '', fn: () => handlePromoteGraph(task) })
   }
   if (task.promotedProcedure === 'PENDING' && task.promotedGraph === 'PENDING') {
-    acts.push({ key: 'both', label: '全部跳过', icon: '⏭', fn: () => handleSkip(task, 'both'), danger: true })
+    acts.push({ key: 'both', label: '全部跳过', icon: '', fn: () => handleSkip(task, 'both'), danger: true })
   } else if (task.promotedProcedure === 'PENDING') {
-    acts.push({ key: 'procedure-skip', label: '跳过规程', icon: '⏭', fn: () => handleSkip(task, 'procedure'), danger: true })
+    acts.push({ key: 'procedure-skip', label: '跳过规程', icon: '', fn: () => handleSkip(task, 'procedure'), danger: true })
   } else if (task.promotedGraph === 'PENDING') {
-    acts.push({ key: 'graph-skip', label: '跳过图谱', icon: '⏭', fn: () => handleSkip(task, 'graph'), danger: true })
+    acts.push({ key: 'graph-skip', label: '跳过图谱', icon: '', fn: () => handleSkip(task, 'graph'), danger: true })
   }
   return acts
 }

@@ -480,7 +480,7 @@ function goToLogin() {
 .loc { display: flex; align-items: baseline; gap: 9px; }
 .loc-root {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: 0.4px;
   color: var(--plaza-text-muted);

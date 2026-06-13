@@ -127,11 +127,11 @@ async function submit() {
         <div class="imgs">
           <div v-for="(u, i) in reportImages" :key="i" class="img-item">
             <img :src="u" alt="" />
-            <button class="img-x" @click="removeImage(i)">✕</button>
+            <button class="img-x" @click="removeImage(i)">移除</button>
           </div>
           <label class="img-add" :class="{ busy: uploading }">
             <input type="file" accept="image/*" multiple hidden @change="onPickFiles" />
-            <span v-if="uploading">上传中…</span><span v-else>＋ 图片</span>
+            <span v-if="uploading">上传中</span><span v-else>添加图片</span>
           </label>
         </div>
       </el-form-item>

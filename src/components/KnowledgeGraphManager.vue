@@ -363,8 +363,8 @@ onBeforeUnmount(() => { cancelAnimationFrame(raf); graph.value?.destroy() })
           <div class="panel-h">设备入口</div>
           <el-input v-model="ui.deviceKw" placeholder="设备名 / 编码 / 型号（空=全部）" size="small"
                     @keyup.enter="loadDevices" clearable />
-          <button class="hud-btn" :disabled="ui.loading" @click="loadDevices">检索设备 ▸</button>
-          <button class="hud-btn ghost" @click="openCreate('device')">＋ 新增设备</button>
+          <button class="hud-btn" :disabled="ui.loading" @click="loadDevices">检索设备</button>
+          <button class="hud-btn ghost" @click="openCreate('device')">新增设备</button>
         </div>
 
         <div class="panel ops">
@@ -410,10 +410,10 @@ onBeforeUnmount(() => { cancelAnimationFrame(raf); graph.value?.destroy() })
           <span class="corner tl" /><span class="corner br" />
           <div class="d-head">
             <span class="d-type" :style="{ color: ui.selected.stroke }">{{ TYPE[ui.selected.type]?.label }}</span>
-            <button class="d-close" @click="ui.showDetail=false">✕</button>
+            <button class="d-close" @click="ui.showDetail=false">关闭</button>
           </div>
           <h3 class="d-name">{{ ui.selected.fullLabel }}</h3>
-          <span v-if="ui.selected.unverified" class="badge-uv">⚠ 未验证 · 手册自动抽取</span>
+          <span v-if="ui.selected.unverified" class="badge-uv">未验证 · 手册自动抽取</span>
 
           <dl class="d-attrs">
             <template v-for="(row,i) in detailRows()" :key="i"><dt>{{ row[0] }}</dt><dd>{{ row[1] }}</dd></template>
@@ -425,12 +425,12 @@ onBeforeUnmount(() => { cancelAnimationFrame(raf); graph.value?.destroy() })
           </div>
 
           <div class="d-actions">
-            <button class="act edit" @click="openEdit">✎ 修改</button>
-            <button class="act del" @click="removeSelected">🗑 删除</button>
+            <button class="act edit" @click="openEdit">修改</button>
+            <button class="act del" @click="removeSelected">删除</button>
           </div>
           <button v-if="CHILD[ui.selected.type]" class="act add"
                   @click="openCreate(CHILD[ui.selected.type].child, ui.selected.id)">
-            ＋ 新增{{ childLabel(ui.selected.type) }}
+            新增{{ childLabel(ui.selected.type) }}
           </button>
         </aside>
       </transition>

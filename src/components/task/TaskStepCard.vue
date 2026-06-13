@@ -79,7 +79,7 @@ async function forceComplete() {
     <div class="s-body">
       <p v-if="step.content" class="s-content">{{ step.content }}</p>
 
-      <div v-if="step.safetyNote" class="s-safety">⚠ 安全提示：{{ step.safetyNote }}</div>
+      <div v-if="step.safetyNote" class="s-safety">安全提示：{{ step.safetyNote }}</div>
 
       <div v-if="step.isCheckpoint && (step.checkpointItems||[]).length" class="s-check">
         <div class="s-check-h">合规检查点</div>
@@ -87,10 +87,10 @@ async function forceComplete() {
       </div>
 
       <div class="s-meta">
-        <span v-if="step.estimatedMinutes">⏱ 约 {{ step.estimatedMinutes }} 分钟</span>
+        <span v-if="step.estimatedMinutes">约 {{ step.estimatedMinutes }} 分钟</span>
         <span v-if="step.requirePhoto" class="req">需拍照</span>
         <span v-if="step.requireNote" class="req">需备注</span>
-        <button class="s-chat" @click="emit('chat', step)">💬 答疑</button>
+        <button class="s-chat" @click="emit('chat', step)">答疑</button>
       </div>
 
       <!-- 已提交的内容 -->
@@ -101,7 +101,7 @@ async function forceComplete() {
 
       <!-- AI 验证结果 -->
       <div v-if="step.aiPass !== null && step.aiPass !== undefined" class="s-ai" :class="step.aiPass ? 'ok' : 'no'">
-        <b>{{ step.aiPass ? '✓ AI 验证通过' : '✕ AI 验证未通过' }}</b>
+        <b>{{ step.aiPass ? 'AI 验证通过' : 'AI 验证未通过' }}</b>
         <span v-if="step.aiConfidence != null" class="conf">置信度 {{ Math.round(Number(step.aiConfidence) * 100) }}%</span>
         <p v-if="step.aiReason" class="reason">{{ step.aiReason }}</p>
       </div>
@@ -110,11 +110,11 @@ async function forceComplete() {
       <div v-if="canAct" class="s-exec">
         <div class="imgs">
           <div v-for="(u,i) in exec.images" :key="i" class="img-item">
-            <img :src="u" alt="" /><button class="img-x" @click="removeImage(i)">✕</button>
+            <img :src="u" alt="" /><button class="img-x" @click="removeImage(i)">移除</button>
           </div>
           <label class="img-add" :class="{ busy: uploading }">
             <input type="file" accept="image/*" multiple hidden @change="onPickFiles" />
-            <span v-if="uploading">上传中…</span><span v-else>＋ 照片</span>
+            <span v-if="uploading">上传中</span><span v-else>添加照片</span>
           </label>
         </div>
         <el-input v-model="exec.note" type="textarea" :rows="2" placeholder="执行备注（如实际处理、读数、异常）" />

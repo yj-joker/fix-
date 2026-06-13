@@ -533,7 +533,7 @@ onMounted(async () => {
                 class="se-safety"
               >
                 <template #prefix>
-                  <span style="color:#ef4444;font-weight:700;font-size:12px">⚠</span>
+                  <span style="color:#ef4444;font-weight:700;font-size:12px">安全</span>
                 </template>
               </el-input>
 
@@ -629,12 +629,12 @@ onMounted(async () => {
             <div class="dvs-head">
               <span class="dvs-num">{{ String(i + 1).padStart(2, '0') }}</span>
               <span class="dvs-title">{{ step.title }}</span>
-              <span v-if="step.isCheckpoint" class="dvs-cp-tag">✓ 检查点</span>
+              <span v-if="step.isCheckpoint" class="dvs-cp-tag">检查点</span>
               <span v-if="step.estimatedMinutes" class="dvs-time">{{ step.estimatedMinutes }} min</span>
             </div>
             <p v-if="step.content" class="dvs-content">{{ step.content }}</p>
             <div v-if="step.safetyNote" class="dvs-safety">
-              <span class="safety-icon">⚠</span>{{ step.safetyNote }}
+              <span class="safety-icon">安全</span>{{ step.safetyNote }}
             </div>
             <div v-if="step.checkpointItems?.length" class="dvs-items">
               <span class="dvs-items-label">检查项：</span>
