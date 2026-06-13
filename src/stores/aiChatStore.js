@@ -1,6 +1,12 @@
 import { reactive } from 'vue'
 import { aiChatStream } from '@/api/aiChat'
 import { flushSseEvents, readSseEvents } from '@/utils/sse'
+import {
+  createAgentTimelineStep,
+  createInitialAgentProgress,
+  createProgressSummary,
+  isAgentTimelineEvent,
+} from '@/utils/agentTimeline'
 
 const MAX_SESSIONS = 20
 
@@ -20,6 +26,8 @@ function createWelcomeMessage(content) {
     evidenceImages: [],
     timestamp: nowTime(),
     status: 'done',
+    agentSteps: [],
+    agentProgress: { text: '', running: false },
   }
 }
 
@@ -68,7 +76,7 @@ function persist(state) {
 function touchSession(state, session) {
   session.updatedAt = Date.now()
   const firstUser = session.messages.find((message) => message.role === 'user')
-  session.title = firstUser?.content?.slice(0, 32) || '新对话'
+  session.title = firstUser?.content?.slice(0, 32) || (firstUser?.images?.length ? '图片对话' : '新对话')
   state.sessions = [session, ...state.sessions.filter((item) => item.id !== session.id)]
   persist(state)
 }
@@ -148,39 +156,17 @@ export const aiChatStore = {
     const session = currentSession(state)
     const trimmedText = (text || '').trim()
     if (!session || state.streaming || (!trimmedText && !files.length)) return
-    const content = trimmedText || '请分析我上传的图片。'
-
-    const visibleImages = (files || []).filter((file) => file.type === 'image').map((file) => file.url).filter(Boolean)
-    session.messages.push({
-      id: `${Date.now()}-user`,
-      role: 'user',
-      content,
-      images: visibleImages,
-      evidenceImages: [],
-      timestamp: nowTime(),
-      status: 'done',
-    })
-
-    const assistant = reactive({
-      id: `${Date.now()}-assistant`,
-      role: 'assistant',
-      content: '',
-      images: [],
-      evidenceImages: [],
-      timestamp: nowTime(),
-      status: 'streaming',
-    })
-    session.messages.push(assistant)
-    state.streaming = true
-    touchSession(state, session)
+    const content = trimmedText
 
     const controller = new AbortController()
     controllers[storageKey] = controller
+    state.streaming = true
     let fullContent = ''
     let typeTimer = null
+    let assistant = null
 
     const startTypewriter = () => {
-      if (typeTimer) return
+      if (typeTimer || !assistant) return
       typeTimer = setInterval(() => {
         if (assistant.content.length < fullContent.length) {
           assistant.content = fullContent.slice(0, assistant.content.length + 2)
@@ -207,6 +193,33 @@ export const aiChatStore = {
         throw new Error('图片上传失败，无法发送给 AI')
       }
 
+      session.messages.push({
+        id: `${Date.now()}-user`,
+        role: 'user',
+        content,
+        images: requestImages,
+        evidenceImages: [],
+        timestamp: nowTime(),
+        status: 'done',
+        agentSteps: [],
+        agentProgress: { text: '', running: false },
+      })
+
+      assistant = reactive({
+        id: `${Date.now()}-assistant`,
+        role: 'assistant',
+        content: '',
+        images: [],
+        evidenceImages: [],
+        timestamp: nowTime(),
+        status: 'streaming',
+        agentSteps: [],
+        agentProgress: createInitialAgentProgress(),
+        latencyMs: 0,
+      })
+      session.messages.push(assistant)
+      touchSession(state, session)
+
       const response = await aiChatStream({
         sessionId: session.backendSessionId || session.id,
         message: content,
@@ -223,6 +236,14 @@ export const aiChatStore = {
       const handleEvent = (event) => {
         const data = event?.data || {}
 
+        if (isAgentTimelineEvent(event?.event)) {
+          assistant.agentSteps.push(createAgentTimelineStep(event, assistant.agentSteps.length))
+          assistant.agentProgress = createProgressSummary(assistant)
+          if (event.event !== 'error') {
+            return
+          }
+        }
+
         if (event.event === 'token') {
           fullContent += data.content || ''
           startTypewriter()
@@ -231,6 +252,8 @@ export const aiChatStore = {
 
         if (event.event === 'done') {
           assistant.evidenceImages = Array.isArray(data.evidenceImages) ? data.evidenceImages : []
+          assistant.latencyMs = data.latency_ms || data.latencyMs || 0
+          assistant.agentProgress = createProgressSummary({ ...assistant, status: 'done' }, data)
           return
         }
 
@@ -246,6 +269,7 @@ export const aiChatStore = {
           fullContent += fullContent ? `\n\n[错误] ${message}` : `[错误] ${message}`
           assistant.status = 'error'
           startTypewriter()
+          assistant.agentProgress = createProgressSummary(assistant)
         }
       }
 
@@ -262,7 +286,10 @@ export const aiChatStore = {
       await waitForTypewriter()
       assistant.content = fullContent
       if (assistant.status !== 'error') assistant.status = 'done'
+      assistant.agentProgress = createProgressSummary(assistant)
     } catch (error) {
+      if (!assistant) return
+
       if (error.name === 'AbortError') {
         if (typeTimer) {
           clearInterval(typeTimer)

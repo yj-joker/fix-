@@ -104,7 +104,7 @@ function sendQuickPrompt(prompt) {
 }
 
 watch(
-  () => messages.value.map((message) => `${message.id}:${message.content}:${message.status}:${(message.evidenceImages || []).length}`).join('|'),
+  () => messages.value.map((message) => `${message.id}:${message.content}:${message.status}:${(message.evidenceImages || []).length}:${(message.agentSteps || []).length}:${message.agentProgress?.text || ''}`).join('|'),
   () => scrollToBottom(),
 )
 
